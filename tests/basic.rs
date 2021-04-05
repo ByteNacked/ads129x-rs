@@ -1,12 +1,11 @@
-use embedded_hal::blocking::spi::{Transfer, Write};
-use embedded_hal::spi::FullDuplex;
-use embedded_hal::digital::v2::OutputPin;
 use embedded_hal::blocking::delay::DelayUs;
+use embedded_hal::blocking::spi::{Transfer, Write};
+use embedded_hal::digital::v2::OutputPin;
+use embedded_hal::spi::FullDuplex;
 use embedded_hal_mock::spi::{Mock as SpiMock, Transaction as SpiTransaction};
 
-use ads129x::Ads129x;
 use ads129x::ads1298::conf::*;
-
+use ads129x::Ads129x;
 
 struct MockNcs;
 
@@ -25,9 +24,8 @@ impl OutputPin for MockNcs {
 struct MockDelay;
 
 impl DelayUs<u32> for MockDelay {
-    fn delay_us(&mut self, _us: u32) { }
+    fn delay_us(&mut self, _us: u32) {}
 }
-
 
 #[test]
 fn test() {
@@ -41,7 +39,6 @@ fn test() {
         SpiTransaction::write(vec![0x42, 0x00, 0b0001_0101]),
         // Config3
         SpiTransaction::write(vec![0x43, 0x00, 0b1100_0000]),
-
         //SpiTransaction::transfer(vec![3, 4], vec![5, 6]),
     ];
 
@@ -58,18 +55,20 @@ fn test() {
         daisy_chain: false,
     };
     ads1298.set_config(config, MockDelay).unwrap();
-    
+
     let ts_config = TestSignalConfig {
         frequency: TestSignalFreq::PulsedAtFclk_div_2_20,
         amplitude: TestSignalAmp::Mode_x2,
         source: TestSignalSource::Internal,
-        .. Default::default()
+        ..Default::default()
     };
-    ads1298.set_test_signal_config(ts_config, MockDelay).unwrap();
+    ads1298
+        .set_test_signal_config(ts_config, MockDelay)
+        .unwrap();
 
     let rld_config = RldConfig {
         ref_buffer_enable: true,
-        .. Default::default()
+        ..Default::default()
     };
     ads1298.set_rld_config(rld_config, MockDelay).unwrap();
 
@@ -77,23 +76,3 @@ fn test() {
     let (mut spi, _) = ads1298.destroy();
     spi.done();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

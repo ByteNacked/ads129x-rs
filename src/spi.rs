@@ -1,9 +1,8 @@
-use embedded_hal as ehal;
-use ehal::blocking::spi::{Write, Transfer};
-use ehal::digital::v2::OutputPin;
 use ehal::blocking::delay::DelayUs;
+use ehal::blocking::spi::{Transfer, Write};
+use ehal::digital::v2::OutputPin;
 use ehal::spi::FullDuplex;
-
+use embedded_hal as ehal;
 
 /// A SPI device also triggering the nCS-pin when suited.
 pub struct SpiDevice<SPI, NCS> {
@@ -27,12 +26,16 @@ where
 
     /// Transfer the buffer to the device, the passed buffer will contain the read data.
     #[inline]
-    pub fn transfer<'buf>(&mut self, buffer: &'buf mut [u8], mut delay: impl DelayUs<u32>) -> Result<&'buf [u8], E> {
+    pub fn transfer<'buf>(
+        &mut self,
+        buffer: &'buf mut [u8],
+        mut delay: impl DelayUs<u32>,
+    ) -> Result<&'buf [u8], E> {
         let _ = self.ncs.set_low();
         delay.delay_us(40);
 
         let res = self.spi.transfer(buffer);
-        
+
         delay.delay_us(40);
         let _ = self.ncs.set_high();
         delay.delay_us(20);

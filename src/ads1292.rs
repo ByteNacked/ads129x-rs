@@ -85,7 +85,11 @@ pub mod conf {
     impl From<Config> for Config1Reg {
         fn from(config: Config) -> Self {
             let mut reg = Config1Reg(0);
-            reg.set_single_shot(if config.mode == Mode::SingleShot {true} else {false});
+            reg.set_single_shot(if config.mode == Mode::SingleShot {
+                true
+            } else {
+                false
+            });
             reg.set_oversampling(config.sample_rate as u8);
             reg
         }
@@ -95,9 +99,9 @@ pub mod conf {
         type Error = u8;
 
         fn try_from(reg: Config1Reg) -> Result<Self, Self::Error> {
-            Ok(Config{
-                mode: Mode::try_from(reg.single_shot() as u8).map_err(|_|reg.0)?,
-                sample_rate: SampleRate::try_from(reg.oversampling()).map_err(|_|reg.0)?,
+            Ok(Config {
+                mode: Mode::try_from(reg.single_shot() as u8).map_err(|_| reg.0)?,
+                sample_rate: SampleRate::try_from(reg.oversampling()).map_err(|_| reg.0)?,
             })
         }
     }
@@ -120,7 +124,6 @@ pub mod conf {
         pub test_freq, set_test_freq: 0;
     }
 }
-
 
 #[derive(Debug)]
 #[repr(u8)]

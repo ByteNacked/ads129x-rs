@@ -1,15 +1,15 @@
 #![no_std]
 
-use core::convert::{TryInto, TryFrom};
+use core::convert::{TryFrom, TryInto};
 
-use embedded_hal as ehal;
-use ehal::blocking::spi::{Write, Transfer};
-use ehal::digital::v2::OutputPin;
 use ehal::blocking::delay::DelayUs;
+use ehal::blocking::spi::{Transfer, Write};
+use ehal::digital::v2::OutputPin;
 use ehal::spi::FullDuplex;
+use embedded_hal as ehal;
 
-pub mod register;
 pub mod command;
+pub mod register;
 pub mod spi;
 
 pub mod ads1292;
@@ -30,17 +30,25 @@ pub enum Ads129xError<E> {
 
 macro_rules! impl_cmd {
     ($fn_name:ident, $command:ident) => {
-        pub fn $fn_name(&mut self, delay: impl DelayUs<u32>) -> Ads129xResult<(),E> {
+        pub fn $fn_name(&mut self, delay: impl DelayUs<u32>) -> Ads129xResult<(), E> {
             self.spi.write(&[command::Command::$command as u8], delay)?;
             Ok(())
         }
-    }
+    };
 }
 
 macro_rules! write_reg {
     (FAM: $family_path:ident, FN: $fn_name:ident, REG: $reg_name:ident ($param_path:ident::$param_ty:ident => $reg_path:ident::$reg_ty:ident)) => {
-        pub fn $fn_name(&mut self, param: $family_path::$param_path::$param_ty, delay: impl DelayUs<u32>) -> Ads129xResult<(),E> {
-            let mut words = [command::Command::WREG as u8 | $family_path::Register::$reg_name as u8, 0x00, $family_path::$reg_path::$reg_ty::from(param).0];
+        pub fn $fn_name(
+            &mut self,
+            param: $family_path::$param_path::$param_ty,
+            delay: impl DelayUs<u32>,
+        ) -> Ads129xResult<(), E> {
+            let mut words = [
+                command::Command::WREG as u8 | $family_path::Register::$reg_name as u8,
+                0x00,
+                $family_path::$reg_path::$reg_ty::from(param).0,
+            ];
             let _ = self.spi.write(&mut words, delay)?;
             Ok(())
         }
@@ -49,20 +57,28 @@ macro_rules! write_reg {
 
 macro_rules! read_reg {
     (FAM: $family_path:ident, FN: $fn_name:ident, REG: $reg_name:ident ($param_path:ident::$param_ty:ident <= $reg_path:ident::$reg_ty:ident)) => {
-        pub fn $fn_name(&mut self, delay: impl DelayUs<u32>) -> Ads129xResult<$family_path::$param_path::$param_ty,E>  {
-            let mut words = [command::Command::RREG as u8 | $family_path::Register::$reg_name as u8, 0x00, 0xA5];
+        pub fn $fn_name(
+            &mut self,
+            delay: impl DelayUs<u32>,
+        ) -> Ads129xResult<$family_path::$param_path::$param_ty, E> {
+            let mut words = [
+                command::Command::RREG as u8 | $family_path::Register::$reg_name as u8,
+                0x00,
+                0xA5,
+            ];
             let res = self.spi.transfer(&mut words, delay)?;
 
-            let param = $family_path::$param_path::$param_ty::try_from($family_path::$reg_path::$reg_ty(res[2]))
-                .map_err(|e|Ads129xError::ReadInterpret(e))?;
+            let param = $family_path::$param_path::$param_ty::try_from(
+                $family_path::$reg_path::$reg_ty(res[2]),
+            )
+            .map_err(|e| Ads129xError::ReadInterpret(e))?;
 
             Ok(param)
         }
     };
 }
 
-
-pub type Ads129xResult<T,E> = Result<T, Ads129xError<E>>;
+pub type Ads129xResult<T, E> = Result<T, Ads129xError<E>>;
 
 pub struct Ads129x<SPI, NCS, DEV> {
     spi: spi::SpiDevice<SPI, NCS>,
@@ -83,12 +99,15 @@ where
     impl_cmd!(set_continuous_mode, RDATAC);
     impl_cmd!(set_command_mode, SDATAC);
 
-    pub fn read_id(&mut self, delay: impl DelayUs<u32>) -> Ads129xResult<register::id::DevModel,E> {
+    pub fn read_id(
+        &mut self,
+        delay: impl DelayUs<u32>,
+    ) -> Ads129xResult<register::id::DevModel, E> {
         let mut words = [command::Command::RREG as u8 | 0x00, 0x00, 0xA5];
         let res = self.spi.transfer(&mut words, delay)?;
-            
+
         let model = register::id::DevModel::try_from(register::id::IdReg(res[2]))
-            .map_err(|e|Ads129xError::IdRegRead(e))?;
+            .map_err(|e| Ads129xError::IdRegRead(e))?;
 
         Ok(model)
     }
@@ -98,7 +117,7 @@ where
     }
 }
 
-impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1292Family> 
+impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1292Family>
 where
     SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
     NCS: OutputPin<Error = core::convert::Infallible>,
@@ -115,7 +134,7 @@ where
     write_reg!(FAM: ads1292, FN: set_config, REG: CONFIG1 (conf::Config => conf::Config1Reg));
 }
 
-impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1298Family> 
+impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1298Family>
 where
     SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
     NCS: OutputPin<Error = core::convert::Infallible>,

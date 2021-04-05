@@ -5,7 +5,7 @@ use num_enum::TryFromPrimitive;
 
 pub mod id {
     use super::*;
-    
+
     #[derive(Debug)]
     pub enum DevModel {
         Ads1291,
@@ -18,9 +18,8 @@ pub mod id {
         Ads1296R,
         Ads1298R,
     }
-    
 
-    bitfield!{
+    bitfield! {
         // 0x00
         pub struct IdReg(u8);
         impl Debug;
@@ -35,7 +34,7 @@ pub mod id {
         ReservedFieldMismatch(u8),
         Unsupported(u8),
     }
-    
+
     impl core::convert::TryFrom<IdReg> for DevModel {
         type Error = IdRegError;
 
@@ -64,36 +63,3 @@ pub mod id {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

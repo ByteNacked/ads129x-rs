@@ -1,4 +1,3 @@
-
 /// SPI commands
 ///
 /// Table 13 page 35 of specification.
