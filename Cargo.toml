@@ -1,0 +1,23 @@
+[package]
+name = "ads129x"
+version = "0.1.0"
+authors = ["Roman Maslennikov. <m3angreen@gmail.com>"]
+repository = "https://github.com/ButtNaked/ads129x-rs"
+license = "MIT OR Apache-2.0"
+description = "This is a platform agnostic Rust driver for the ADS129x family Texas Instruments ADCs"
+keywords = ["driver", "spi", "embedded-hal-driver"]
+categories = ["embedded", "hardware-support", "no-std"]
+homepage = "https://github.com/ButtNaked/ads129x-rs"
+documentation = "https://docs.rs/ads129x"
+edition = "2018"
+
+[dependencies]
+nb = "0.1.3"
+embedded-hal = { version = "0.2.4", features = ["unproven"] }
+num_enum = { version = "0.5.1", default-features = false }
+log = "0.4"
+bitfield = "0.13"
+
+[dev-dependencies]
+embedded-hal-mock = "0.7"
+
