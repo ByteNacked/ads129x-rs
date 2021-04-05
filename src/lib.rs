@@ -1,6 +1,6 @@
 #![no_std]
 
-use core::convert::{TryFrom, TryInto};
+use core::convert::TryFrom;
 
 use ehal::blocking::delay::DelayUs;
 use ehal::blocking::spi::{Transfer, Write};

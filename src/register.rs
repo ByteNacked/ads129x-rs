@@ -1,7 +1,4 @@
-use core::convert::TryFrom;
-
 use bitfield::bitfield;
-use num_enum::TryFromPrimitive;
 
 pub mod id {
     use super::*;

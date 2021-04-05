@@ -1,7 +1,5 @@
 use embedded_hal::blocking::delay::DelayUs;
-use embedded_hal::blocking::spi::{Transfer, Write};
 use embedded_hal::digital::v2::OutputPin;
-use embedded_hal::spi::FullDuplex;
 use embedded_hal_mock::spi::{Mock as SpiMock, Transaction as SpiTransaction};
 
 use ads129x::ads1298::conf::*;
@@ -44,7 +42,7 @@ fn test() {
 
     let ncs = MockNcs;
 
-    let mut spi = SpiMock::new(&expectations);
+    let spi = SpiMock::new(&expectations);
 
     let mut ads1298 = Ads129x::new_ads1298(spi, ncs);
     ads1298.set_command_mode(MockDelay).unwrap();

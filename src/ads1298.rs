@@ -19,6 +19,7 @@ macro_rules! impl_from_enum_to_bool {
     };
 }
 
+/// Register map description
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy)]
 pub enum Register {
@@ -82,10 +83,14 @@ pub enum Register {
 pub mod conf {
     use super::*;
 
+    /// Basic device configuration
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct Config {
+        /// Device mode
         pub mode: Mode,
+        /// Oscillator clock output
         pub osc_clock_output: bool,
+        /// Daisy chain or multiple readback mode
         pub daisy_chain: bool,
     }
 
@@ -99,6 +104,7 @@ pub mod conf {
         }
     }
 
+    /// Device mode
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum Mode {
         HighResolution(SampleRateHR),
@@ -111,6 +117,7 @@ pub mod conf {
         }
     }
 
+    /// Sample rate in high-resolution mode
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum SampleRateHR {
@@ -123,6 +130,7 @@ pub mod conf {
         Sps500 = 0b110,
     }
 
+    /// Sample rate in low power mode
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum SampleRateLP {
@@ -137,11 +145,39 @@ pub mod conf {
 
     // 0x01
     bitfield! {
+        /// Configuration Register 1
         pub struct Config1Reg(u8);
         impl Debug;
+
+        /// Output data rate
         pub output_date_rate, set_output_date_rate : 2, 0;
+
+        /// `CLK` connection
+        ///
+        /// This bit determines if the internal oscillator signal is connected to the `CLK` pin when
+        /// the `CLKSEL` pin = 1
+        ///
+        ///   - 0 = Oscillator clock output disabled
+        ///   - 1 = Oscillator clock output enabled
+        ///
         pub clock_enable, set_clock_enable : 5;
+
+        /// Daisy-chain or multiple readback mode
+        ///
+        /// This bit determine swhich mode is enabled.
+        ///
+        ///   - 0 = Daisy-chain mode
+        ///   - 1 = Multiple readback mode
+        ///
         pub daisy_disable, set_daisy_disable : 6;
+
+        /// High-resolution or low-power mode
+        ///
+        /// This bit determines whether the device runs in low-power or high-resolution mode.
+        ///
+        ///   - 0 = LP mode
+        ///   - 1 = HR mode
+        ///
         pub high_resolution, set_high_resolution : 7;
     }
 
@@ -180,11 +216,16 @@ pub mod conf {
         }
     }
 
+    /// Test signal configuration
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct TestSignalConfig {
+        /// Test signal frequency
         pub frequency: TestSignalFreq,
+        /// Test signal amplitude
         pub amplitude: TestSignalAmp,
+        /// Test signal source
         pub source: TestSignalSource,
+        /// WCT chopping scheme
         pub wct_chop: WctChoppingFreq,
     }
 
@@ -199,39 +240,49 @@ pub mod conf {
         }
     }
 
+    /// Test signal frequency settings
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum TestSignalFreq {
+        /// Pulsed at `fCLK` / 2**21
         PulsedAtFclk_div_2_21 = 0b00,
+        /// Pulsed at `fCLK` / 2**20
         PulsedAtFclk_div_2_20 = 0b01,
+        /// Not used
         NotUsed = 0b10,
+        /// At dc
         AtDC = 0b11,
     }
 
+    /// Test signal amplitude settings
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum TestSignalAmp {
-        /// 1 × –(VREFP– VREFN)/ 2400V
+        /// 1 × –(`VREFP`– `VREFN`)/ 2400V
         Mode_x1 = 0b0,
-        /// 2 × –(VREFP– VREFN)/ 2400V
+        /// 2 × –(`VREFP– `VREFN`)/ 2400V
         Mode_x2 = 0b1,
     }
     impl_from_enum_to_bool!(TestSignalAmp);
 
+    /// Test signal source
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum TestSignalSource {
+        /// Test signals are driven externally
         External = 0b0,
+        /// Test signals are driven internally
         Internal = 0b1,
     }
     impl_from_enum_to_bool!(TestSignalSource);
 
+    /// WCT chopping scheme
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum WctChoppingFreq {
-        /// Chopping frequency varies
+        /// Chopping frequency varies, see datasheet.
         Variable = 0b0,
-        /// Chopping frequency constant at fMOD/ 16
+        /// Chopping frequency constant at `fMOD`/ 16
         Const = 0b1,
     }
     impl_from_enum_to_bool!(WctChoppingFreq);
@@ -239,21 +290,47 @@ pub mod conf {
     // 0x02
     bitfield! {
         /// Configuration register 2
-        /// configures the test signal generation
+        ///
+        /// Configures the test signal generation
         pub struct Config2Reg(u8);
         impl Debug;
+
         /// Test signal frequency
+        ///
         /// These bits determine the calibration signal frequency.
+        ///   - 00 = Pulsed at `fCLK` / 2**21
+        ///   - 01 = Pulsed at `fCLK` / 2**20
+        ///   - 10 = Not used
+        ///   - 11 = At dc
+        ///
         pub test_freq, set_test_freq : 1, 0;
+
         /// Test signal amplitude
+        ///
         /// These bits determine the calibration signal amplitude
+        ///
+        ///   - 0 = 1 × –(`VREFP`– `VREFN`)/ 2400V
+        ///   - 1 = 2 × –(`VREFP`– `VREFN`)/ 2400V
+        ///
         pub test_amp, set_test_amp : 2;
+
         /// TEST source
+        ///
         /// This bit determines the source for the test signal.
+        ///
+        ///   - 0 = Test signals are driven externally
+        ///   - 1 = Test signals are generated internally
+        ///
         pub int_test, set_int_test : 4;
+
         /// WCT chopping scheme
+        ///
         /// This bit determines whether the chopping frequency of WCT amplifiers is variable or
         /// fixed
+        ///
+        ///   - 0 = Chopping frequency varies, see datasheet.
+        ///   - 1 = Choppingfrequencyconstantat `fMOD`/ 16
+        ///
         pub wct_chop, set_wct_chop : 5;
     }
 
@@ -281,45 +358,45 @@ pub mod conf {
         }
     }
 
+    /// Configures multireference and RLD operation
+    #[allow(non_snake_case)]
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
     pub struct RldConfig {
         /// RLD lead-off status
-        ///
-        /// (WARNING: inverse logic)
         ///
         ///   - false = connected
         ///   - true = not connected
         ///
         pub leadoff_status: bool,
 
-        /// RLD sense function
+        /// RLD sense function enable
         pub leadoff_sense_enable: bool,
 
-        /// RLD buffer power
+        /// RLD buffer power enable
         pub buffer_power_enable: bool,
 
-        /// RLDREF signal source
+        /// `RLDREF` signal source
         pub ref_source: RldRefSource,
 
         /// RLD measurement
         ///   - 0 = Open
-        ///   - 1 = RLD_IN signal is routed to the channel that has the MUX_Setting 010 (VREF)
+        ///   - 1 = `RLD_IN` signal is routed to the channel that has the MUX_Setting 010 (VREF)
         pub measurement_enable: bool,
 
         /// Reference voltage 4V enable
         pub vref_4V_enable: bool,
 
-        /// Power-down reference buffer
+        /// Power-down reference buffer enable
         pub ref_buffer_enable: bool,
     }
 
-    /// Determines the RLDREF signal source
+    /// Determines the `RLDREF` signal source
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum RldRefSource {
-        /// RLDREF signal fed externally
+        /// `RLDREF` signal fed externally
         External = 0b0,
-        /// RLDREF signal (AVDD– AVSS)/ 2 generated internally
+        /// `RLDREF` signal (`AVDD`– `AVSS`)/ 2 generated internally
         Interanl = 0b1,
     }
     impl_from_enum_to_bool!(RldRefSource);
@@ -332,72 +409,74 @@ pub mod conf {
 
     // 0x03
     bitfield! {
-        /// # Configuration register 3
-        /// configures multireference and RLD operation
+        /// Configuration register 3
+        ///
+        /// Configures multireference and RLD operation
+        ///
         pub struct Config3Reg(u8);
         impl Debug;
 
-        /// ## RLD lead-off status
+        /// RLD lead-off status
         ///
         /// This bit determinesthe RLD status.
         ///
         /// **Readonly**
         ///
-        ///   - 0 = RLDis connected
-        ///   - 1 = RLDis not connected
+        ///   - 0 = RLD is connected
+        ///   - 1 = RLD is not connected
         ///
-        pub rld_stat, set_rld_stat : 0;
+        pub rld_stat, _ : 0;
 
-        /// ## RLD sense function
+        /// RLD sense function
         ///
         /// This bit enables the RLD sense function.
         ///
-        ///   - 0 = RLDsenseis disabled
-        ///   - 1 = RLDsenseis enabled
+        ///   - 0 = RLD sense is disabled
+        ///   - 1 = RLD sense is enabled
         ///
         pub rld_loff_sens, set_rld_loff_sens : 1;
 
-        /// ## RLD buffer power
+        /// RLD buffer power
         ///
         /// This bit determines the RLD buffer power state
         ///
-        ///   - 0 = RLDbufferis powereddown
-        ///   - 1 = RLDbufferis enabled
+        ///   - 0 = RLD buffer is powereddown
+        ///   - 1 = RLD buffer is enabled
         ///
         pub pd_rld, set_pd_rld : 2;
 
-        /// ## RLDREF signal
+        /// `RLDREF` signal
         ///
-        /// This bit determines the RLDREF signal source
+        /// This bit determines the `RLDREF` signal source
         ///
-        ///   - 0 = RLDREFsignalfed externally
-        ///   - 1 = RLDREFsignal(AVDD– AVSS)/ 2 generatedinternally
+        ///   - 0 = `RLDREF` signal fed externally
+        ///   - 1 = `RLDREF` signal (`AVDD`– `AVSS`)/ 2 generated internally
         ///
         pub rldref_int, set_rldref_int : 3;
 
-        /// ## RLD measurement
+        /// RLD measurement
         ///
         /// This bit enables RLD measurement
         ///   - 0 = Open
-        ///   - 1 = RLD_IN signal is routed to the channel that has the MUX_Setting 010 (VREF)
+        ///   - 1 = `RLD_IN` signal is routed to the channel that has the MUX_Setting 010 (VREF)
         ///
         pub rld_meas, set_rld_meas : 4;
-        /// ## Reference voltage
+        /// Reference voltage
         ///
-        /// This bit determines the reference voltage, VREFP
+        /// This bit determines the reference voltage, `VREFP`
         ///
-        ///   - 0 = VREFP is set to 2.4 V
-        ///   - 1 = VREFP is set to 4 V (use only with a 5-V analog supply)
+        ///   - 0 = `VREFP` is set to 2.4 V
+        ///   - 1 = `VREFP` is set to 4 V (use only with a 5-V analog supply)
         ///
         pub vref_4v, set_vref_4v : 5;
 
-        /// ## Reserved
+        /// Reserved
         ///
         /// Always 0x1
         ///
         _, set_reserved : 6;
 
-        /// ## Power-down reference buffer
+        /// Power-down reference buffer
         ///
         /// This bit determines the power-down reference buffer state
         ///
