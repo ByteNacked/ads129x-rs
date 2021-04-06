@@ -4,6 +4,7 @@ use embedded_hal_mock::spi::{Mock as SpiMock, Transaction as SpiTransaction};
 
 use ads129x::ads1298::conf::*;
 use ads129x::ads1298::chan::*;
+use ads129x::ads1298::gpio::*;
 use ads129x::Ads129x;
 
 struct MockNcs;
@@ -47,6 +48,8 @@ fn test() {
         SpiTransaction::write(vec![0x4A, 0x00, 0b0100_0000]),
         SpiTransaction::write(vec![0x4B, 0x00, 0b0100_0000]),
         SpiTransaction::write(vec![0x4C, 0x00, 0b0100_0000]),
+        // GPIO
+        SpiTransaction::write(vec![0x54, 0x00, 0b0000_0000]),
 
         //SpiTransaction::transfer(vec![3, 4], vec![5, 6]),
     ];
@@ -90,6 +93,11 @@ fn test() {
     ads1298.set_chan_6(chan, MockDelay).unwrap();
     ads1298.set_chan_7(chan, MockDelay).unwrap();
     ads1298.set_chan_8(chan, MockDelay).unwrap();
+
+    ads1298.set_gpio(Gpio {
+        mode: [GpioMode::Output;4],
+        data: [false;4],
+    }, MockDelay).unwrap();
 
     // Finalize expectations
     let (mut spi, _) = ads1298.destroy();

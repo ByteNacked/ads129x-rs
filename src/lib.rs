@@ -154,6 +154,9 @@ where
     read_reg!(FAM: ads1298, FN: test_rld_config, REG: CONFIG3 (conf::RldConfig <= conf::Config3Reg));
     write_reg!(FAM: ads1298, FN: set_rld_config, REG: CONFIG3 (conf::RldConfig => conf::Config3Reg));
 
+    read_reg!(FAM: ads1298, FN: leadoff_control, REG: LOFF (loff::LeadOffControl <= loff::LeadOffControlReg));
+    write_reg!(FAM: ads1298, FN: set_leadoff_control, REG: LOFF (loff::LeadOffControl => loff::LeadOffControlReg));
+
     read_reg!(FAM: ads1298, FN: chan_1, REG: CH1SET (chan::Chan <= chan::ChanSetReg));
     read_reg!(FAM: ads1298, FN: chan_2, REG: CH2SET (chan::Chan <= chan::ChanSetReg));
     read_reg!(FAM: ads1298, FN: chan_3, REG: CH3SET (chan::Chan <= chan::ChanSetReg));
@@ -171,6 +174,9 @@ where
     write_reg!(FAM: ads1298, FN: set_chan_6, REG: CH6SET (chan::Chan => chan::ChanSetReg));
     write_reg!(FAM: ads1298, FN: set_chan_7, REG: CH7SET (chan::Chan => chan::ChanSetReg));
     write_reg!(FAM: ads1298, FN: set_chan_8, REG: CH8SET (chan::Chan => chan::ChanSetReg));
+    
+    read_reg!(FAM: ads1298, FN: gpio, REG: GPIO (gpio::Gpio <= gpio::GpioReg));
+    write_reg!(FAM: ads1298, FN: set_gpio, REG: GPIO (gpio::Gpio => gpio::GpioReg));
 }
 
 impl<E> From<E> for Ads129xError<E> {

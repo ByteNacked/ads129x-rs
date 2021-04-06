@@ -418,7 +418,7 @@ pub mod conf {
 
         /// RLD lead-off status
         ///
-        /// This bit determinesthe RLD status.
+        /// This bit determines the RLD status.
         ///
         /// **Readonly**
         ///
@@ -653,6 +653,283 @@ pub mod chan {
                     input: ChannelInput::try_from(reg.mux()).map_err(|_| reg.0)?,
                     gain: ChannelGain::try_from(reg.gain()).map_err(|_| reg.0)?,
                 }
+            })
+        }
+    }
+}
+
+
+pub mod loff {
+    use super::*;
+    
+    /// Lead-off control configuration
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct LeadOffControl {
+        pub frequency: LeadOffFreq,
+        pub magnitude: LeadOffMagnitude,
+        pub detection_mode: LeadOffDetectMode,
+        pub comparator_threshold: LeadOffCompThreshold,
+    }
+    
+    /// Lead-off frequency
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+    #[repr(u8)]
+    pub enum LeadOffFreq {
+        /// Default value
+        Default = 0b00,
+        /// AC lead-offdetection at `fDR`/ 4
+        AC = 0b01,
+        /// Do not use
+        NotUse = 0b10,
+        /// DC lead-off detection turned on
+        DC = 0b11,
+    }
+
+    /// Lead-off current magnitude
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+    #[repr(u8)]
+    pub enum LeadOffMagnitude {
+        nA_6  = 0b00,
+        nA_12 = 0b01,
+        nA_18 = 0b10,
+        nA_24 = 0b11,
+    }
+
+    /// Lead-off detection mode
+    #[repr(u8)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+    pub enum LeadOffDetectMode {
+        CurrentSource = 0b0,
+        PullUpDown = 0b1,
+    }
+    impl_from_enum_to_bool!(LeadOffDetectMode);
+    
+    /// Lead-off comparator threshold
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum LeadOffCompThreshold {
+        PositiveSide(CompPositiveSide),
+        NegativeSide(CompNegativeSide),
+    }
+
+    impl From<LeadOffCompThreshold> for u8 {
+        fn from(v: LeadOffCompThreshold) -> Self {
+            match v {
+                LeadOffCompThreshold::PositiveSide(vv) => vv as u8,
+                LeadOffCompThreshold::NegativeSide(vv) => vv as u8,
+            }
+        }
+    }
+
+    /// Comparator positive side
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+    #[repr(u8)]
+    pub enum CompPositiveSide {
+        Pct_95_5 = 0b000,
+        Pct_92_5 = 0b001,
+        Pct_90_0 = 0b010,
+        Pct_87_5 = 0b011,
+        Pct_85_0 = 0b100,
+        Pct_80_0 = 0b101,
+        Pct_75_0 = 0b110,
+        Pct_70_0 = 0b111,
+    }
+
+    /// Comparator negative side
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+    #[repr(u8)]
+    pub enum CompNegativeSide {
+        Pct_5_0 = 0b000,
+        Pct_7_5 = 0b001,
+        Pct_10_0 = 0b010,
+        Pct_12_5 = 0b011,
+        Pct_15_0 = 0b100,
+        Pct_20_0 = 0b101,
+        Pct_25_0 = 0b110,
+        Pct_30_0 = 0b111,
+    }
+    
+    // 0x04
+    bitfield! {
+        /// The lead-off control register configures the lead-off detection operation
+        pub struct LeadOffControlReg(u8);
+        impl Debug;
+
+        /// Lead-off frequency
+        ///
+        /// These bits determine the frequency of lead-off detect for each channel.
+        ///
+        ///   - 00 = When any bits of the `LOFF_SENSP` or `LOFF_SENSN` registers are turned on,
+        ///     make sure that `FLEAD`[1:0] are either set to 01 or 11
+        ///   - 01 = AC lead-offdetection at `fDR`/ 4
+        ///   - 10 = Do not use
+        ///   - 11 = DC lead-off detection turned on
+        ///
+        pub flead_off, set_flead_off : 1, 0;
+
+        /// Lead-off current magnitude
+        ///
+        /// These bits determine the magnitude of current for the
+        /// current lead-off mode.
+        ///   - 00 = 6 nA
+        ///   - 01 = 12 nA
+        ///   - 10 = 18 nA
+        ///   - 11 = 24 nA
+        ///
+        pub ilead_off, set_ilead_off : 3, 2;
+
+        /// Lead-off detection mode
+        ///
+        /// This bit determines the lead-off detection mode.
+        ///   - 0 = Current source mode lead-off
+        ///   - 1 = pullup or pulldown resistor mode lead-off
+        ///
+        pub vlead_off_en, set_vlead_off_en : 4;
+
+        /// Lead-off comparator threshold
+        ///
+        /// Comparator positive side
+        ///   - 000 = 95%
+        ///   - 001 = 92.5%
+        ///   - 010 = 90%
+        ///   - 011 = 87.5%
+        ///   - 100 = 85%
+        ///   - 101 = 80%
+        ///   - 110 = 75%
+        ///   - 111 = 70%
+        ///
+        /// Comparator negative side
+        ///   - 000 = 5%
+        ///   - 001 = 7.5%
+        ///   - 010 = 10%
+        ///   - 011 = 12.5%
+        ///   - 100 = 15%
+        ///   - 101 = 20%
+        ///   - 110 = 25%
+        ///   - 111 = 30%
+        ///
+        pub comp_th, set_comp_th : 7, 5;
+    }
+
+    impl From<LeadOffControl> for LeadOffControlReg {
+        fn from(param: LeadOffControl) -> Self {
+            let mut reg = LeadOffControlReg(0);
+            reg.set_flead_off(param.frequency as u8);
+            reg.set_ilead_off(param.magnitude as u8);
+            reg.set_vlead_off_en(param.detection_mode.into());
+            reg.set_comp_th(param.comparator_threshold.into());
+            reg
+        }
+    }
+
+    impl TryFrom<LeadOffControlReg> for LeadOffControl {
+        type Error = u8;
+
+        fn try_from(reg: LeadOffControlReg) -> Result<Self, Self::Error> {
+            Ok(LeadOffControl{
+                frequency: LeadOffFreq::try_from(reg.flead_off()).map_err(|_|reg.0)?,
+                magnitude: LeadOffMagnitude::try_from(reg.ilead_off()).map_err(|_|reg.0)?,
+                detection_mode: LeadOffDetectMode::try_from(reg.vlead_off_en() as u8).map_err(|_|reg.0)?,
+                comparator_threshold: LeadOffCompThreshold::PositiveSide(CompPositiveSide::try_from(reg.flead_off()).map_err(|_|reg.0)?),
+            })
+        }
+    }
+}
+
+pub mod gpio {
+    use super::*;
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct Gpio {
+        pub mode: [GpioMode;4],
+        pub data: [bool;4],
+    }
+
+    impl Default for Gpio {
+        fn default() -> Self {
+            Gpio{
+                mode: [GpioMode::Input;4],
+                data: [false;4],
+            }
+        }
+    }
+    
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+    #[repr(u8)]
+    pub enum GpioMode {
+        Output = 0b0,
+        Input  = 0b1,
+    }
+    impl_from_enum_to_bool!(GpioMode);
+
+    // 0x14
+    bitfield! {
+        /// GPIO: General-Purpose I/O Register
+        ///
+        /// The general-purpose I/O register controls the action of the three GPIOpins.
+        /// When `RESP_CTRL`[1:0] is in mode 01 and 11, the GPIO2, GPIO3,and GPIO4 pins are not
+        /// available for use.
+        ///
+        pub struct GpioReg(u8);
+        impl Debug;
+        
+        /// GPIO control (corresponding GPIOD)
+        ///
+        /// These bits determine if the corresponding GPIOD pin is an input or output.
+        ///
+        ///   - 0 = Output
+        ///   - 1 = Input
+        ///
+        pub gpioc1, set_gpioc1 : 0;
+        pub gpioc2, set_gpioc2 : 1;
+        pub gpioc3, set_gpioc3 : 2;
+        pub gpioc4, set_gpioc4 : 3;
+
+        /// GPIO data
+        ///
+        /// These bits are used to read and write data to the GPIO ports. When reading the
+        /// register, the data returned correspond to the state of the GPIO external pins, whether they are
+        /// programmed as inputs or as outputs. As outputs, a write to the GPIOD sets the output value. As
+        /// inputs, a write to the GPIOD has no effect. GPIO is not available in certain respiration modes.
+        ///
+        pub gpiod1, set_gpiod1 : 4;
+        pub gpiod2, set_gpiod2 : 5;
+        pub gpiod3, set_gpiod3 : 6;
+        pub gpiod4, set_gpiod4 : 7;
+    }
+
+    impl From<Gpio> for GpioReg {
+        fn from(param: Gpio) -> Self {
+            let mut reg = GpioReg(0);
+            reg.set_gpioc1(param.mode[0].into());
+            reg.set_gpioc2(param.mode[1].into());
+            reg.set_gpioc3(param.mode[2].into());
+            reg.set_gpioc4(param.mode[3].into());
+
+            reg.set_gpiod1(param.data[0]);
+            reg.set_gpiod2(param.data[1]);
+            reg.set_gpiod3(param.data[2]);
+            reg.set_gpiod4(param.data[3]);
+            reg
+        }
+    }
+
+    impl TryFrom<GpioReg> for Gpio {
+        type Error = u8;
+
+        fn try_from(reg: GpioReg) -> Result<Self, Self::Error> {
+            Ok(Gpio{
+                mode: [
+                    GpioMode::try_from(reg.gpioc1() as u8).map_err(|_| reg.0)?,
+                    GpioMode::try_from(reg.gpioc2() as u8).map_err(|_| reg.0)?,
+                    GpioMode::try_from(reg.gpioc3() as u8).map_err(|_| reg.0)?,
+                    GpioMode::try_from(reg.gpioc4() as u8).map_err(|_| reg.0)?,
+                ],
+                data: [
+                    reg.gpiod1(),
+                    reg.gpiod2(),
+                    reg.gpiod3(),
+                    reg.gpiod4(),
+                ],
             })
         }
     }
