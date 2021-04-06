@@ -3,6 +3,7 @@ use embedded_hal::digital::v2::OutputPin;
 use embedded_hal_mock::spi::{Mock as SpiMock, Transaction as SpiTransaction};
 
 use ads129x::ads1298::conf::*;
+use ads129x::ads1298::chan::*;
 use ads129x::Ads129x;
 
 struct MockNcs;
@@ -37,6 +38,16 @@ fn test() {
         SpiTransaction::write(vec![0x42, 0x00, 0b0001_0101]),
         // Config3
         SpiTransaction::write(vec![0x43, 0x00, 0b1100_0000]),
+        // CHNSET
+        SpiTransaction::write(vec![0x45, 0x00, 0b0100_0000]),
+        SpiTransaction::write(vec![0x46, 0x00, 0b0100_0000]),
+        SpiTransaction::write(vec![0x47, 0x00, 0b0100_0000]),
+        SpiTransaction::write(vec![0x48, 0x00, 0b0100_0000]),
+        SpiTransaction::write(vec![0x49, 0x00, 0b0100_0000]),
+        SpiTransaction::write(vec![0x4A, 0x00, 0b0100_0000]),
+        SpiTransaction::write(vec![0x4B, 0x00, 0b0100_0000]),
+        SpiTransaction::write(vec![0x4C, 0x00, 0b0100_0000]),
+
         //SpiTransaction::transfer(vec![3, 4], vec![5, 6]),
     ];
 
@@ -69,6 +80,16 @@ fn test() {
         ..Default::default()
     };
     ads1298.set_rld_config(rld_config, MockDelay).unwrap();
+
+    let chan = Chan::PowerUp{ gain: ChannelGain::X4, input: ChannelInput::Normal };
+    ads1298.set_chan_1(chan, MockDelay).unwrap();
+    ads1298.set_chan_2(chan, MockDelay).unwrap();
+    ads1298.set_chan_3(chan, MockDelay).unwrap();
+    ads1298.set_chan_4(chan, MockDelay).unwrap();
+    ads1298.set_chan_5(chan, MockDelay).unwrap();
+    ads1298.set_chan_6(chan, MockDelay).unwrap();
+    ads1298.set_chan_7(chan, MockDelay).unwrap();
+    ads1298.set_chan_8(chan, MockDelay).unwrap();
 
     // Finalize expectations
     let (mut spi, _) = ads1298.destroy();

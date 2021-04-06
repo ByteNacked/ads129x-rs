@@ -517,4 +517,143 @@ pub mod conf {
     }
 }
 
-pub mod chan {}
+pub mod chan {
+    use super::*;
+
+    /// Individual channel settings
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum Chan {
+        PowerUp {
+            input: ChannelInput,
+            gain: ChannelGain,
+        },
+        PowerDown,
+    }
+
+    impl Default for Chan {
+        fn default() -> Self {
+            Chan::PowerUp {
+                input: ChannelInput::Normal,
+                gain: ChannelGain::X6,
+            }
+        }
+    }
+
+    /// Channel Input
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+    #[repr(u8)]
+    pub enum ChannelInput {
+        /// Normal electrode input
+        Normal = 0b000,
+        /// Input shorted (for offset or noise measurements)
+        Shorted = 0b001,
+        /// Used in conjunction with `RLD_MEAS` bit for RLD measurements.
+        Rld = 0b010,
+        /// MVDD for supply measurement
+        MVDD = 0b011,
+        /// Temperature sensor
+        Temp = 0b100,
+        /// Test signal
+        TestSig = 0b101,
+        /// RLD_DRP (positiv eelectrode is the driver)
+        RldDrp = 0b110,
+        /// RLD_DRN (negative electrode is the driver)
+        RldDrn = 0b111,
+    }
+
+    /// PGA gain
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+    #[repr(u8)]
+    pub enum ChannelGain {
+        X6 = 0b000,
+        X1 = 0b001,
+        X2 = 0b010,
+        X3 = 0b011,
+        X4 = 0b100,
+        X8 = 0b101,
+        X12 = 0b110,
+    }
+
+    bitfield! {
+        /// Individual channel settings
+        ///
+        /// The CH[1:8]SET control register configures the power mode, PGAgain, and multiplexer
+        /// settings channels
+        ///
+        pub struct ChanSetReg(u8);
+        impl Debug;
+
+        /// Channel Input
+        ///
+        /// These bits determine the channel input selection.
+        ///
+        ///   - 000 = Normal electrode input
+        ///   - 001 = Input shorted (for offset or noise measurements)
+        ///   - 010 = Used in conjunction with `RLD_MEAS` bit for RLD measurements.
+        ///   - 011 = MVDD for supply measurement
+        ///   - 100 = Temperature sensor
+        ///   - 101 = Test signal
+        ///   - 110 = RLD_DRP (positiv eelectrode is the driver)
+        ///   - 111 = RLD_DRN (negative electrode is the driver)
+        ///
+        pub mux, set_mux : 2,0;
+
+        /// PGA gain
+        ///
+        /// These bits determine the PGA gain setting.
+        ///   - 000 =  6
+        ///   - 001 =  1
+        ///   - 010 =  2
+        ///   - 011 =  3
+        ///   - 100 =  4
+        ///   - 101 =  8
+        ///   - 110 = 12
+        ///
+        pub gain, set_gain : 6, 4;
+
+        /// Power-down
+        ///
+        /// This bit determines the channel power mode for the corresponding channel.
+        ///
+        ///   - 0 = Normaloperation
+        ///   - 1 = Channelpower-down.
+        ///
+        /// When powering down a channel,TI recommends that the channel be set to
+        /// input short by setting the appropriate MUXn[2:0]= 001 of the CHnSET register
+        ///
+        pub pd, set_pd: 7;
+    }
+
+    impl From<Chan> for ChanSetReg {
+        fn from(chan: Chan) -> Self {
+            let mut reg = ChanSetReg(0);
+            match chan {
+                Chan::PowerUp { input, gain } => {
+                    reg.set_mux(input as u8);
+                    reg.set_gain(gain as u8);
+                    reg.set_pd(false);
+                }
+                Chan::PowerDown => {
+                    reg.set_mux(ChannelInput::Shorted as u8);
+                    reg.set_pd(true);
+                }
+            }
+            reg
+        }
+    }
+
+    impl TryFrom<ChanSetReg> for Chan {
+        type Error = u8;
+
+        fn try_from(reg: ChanSetReg) -> Result<Self, Self::Error> {
+            Ok(if reg.pd() {
+                Chan::PowerDown
+            } else {
+                Chan::PowerUp {
+                    input: ChannelInput::try_from(reg.mux()).map_err(|_| reg.0)?,
+                    gain: ChannelGain::try_from(reg.gain()).map_err(|_| reg.0)?,
+                }
+            })
+        }
+    }
+}
