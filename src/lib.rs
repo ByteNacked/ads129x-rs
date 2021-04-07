@@ -174,9 +174,19 @@ where
     write_reg!(FAM: ads1298, FN: set_chan_6, REG: CH6SET (chan::Chan => chan::ChanSetReg));
     write_reg!(FAM: ads1298, FN: set_chan_7, REG: CH7SET (chan::Chan => chan::ChanSetReg));
     write_reg!(FAM: ads1298, FN: set_chan_8, REG: CH8SET (chan::Chan => chan::ChanSetReg));
-    
+
+    read_reg!(FAM: ads1298, FN: leadoff_sense_positive, REG: LOFF_SENSP (loff::LeadOffSense <= loff::LeadOffSenseReg));
+    write_reg!(FAM: ads1298, FN: set_leadoff_sense_positive, REG: LOFF_SENSP (loff::LeadOffSense => loff::LeadOffSenseReg));
+    read_reg!(FAM: ads1298, FN: leadoff_sense_negative, REG: LOFF_SENSN (loff::LeadOffSense <= loff::LeadOffSenseReg));
+    write_reg!(FAM: ads1298, FN: set_leadoff_sense_negative, REG: LOFF_SENSN (loff::LeadOffSense => loff::LeadOffSenseReg));
+    read_reg!(FAM: ads1298, FN: leadoff_flip, REG: LOFF_FLIP (loff::LeadOffFlip <= loff::LeadOffFlipReg));
+    write_reg!(FAM: ads1298, FN: set_leadoff_flip, REG: LOFF_FLIP (loff::LeadOffFlip => loff::LeadOffFlipReg));
+
     read_reg!(FAM: ads1298, FN: gpio, REG: GPIO (gpio::Gpio <= gpio::GpioReg));
     write_reg!(FAM: ads1298, FN: set_gpio, REG: GPIO (gpio::Gpio => gpio::GpioReg));
+
+    read_reg!(FAM: ads1298, FN: misc_config, REG: CONFIG4 (conf::MiscConfig <= conf::Config4Reg));
+    write_reg!(FAM: ads1298, FN: set_misc_config, REG: CONFIG4 (conf::MiscConfig => conf::Config4Reg));
 }
 
 impl<E> From<E> for Ads129xError<E> {

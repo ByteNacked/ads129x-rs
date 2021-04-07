@@ -515,6 +515,133 @@ pub mod conf {
             })
         }
     }
+
+    /// Various configurations
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct MiscConfig {
+        pub leadoff_comparator_enable: bool,
+        pub wct_to_rld_enable: bool,
+        pub single_shot_mode: bool,
+        pub respiration_freq: ResperationFreq,
+    }
+
+    impl Default for MiscConfig {
+        fn default() -> Self {
+            MiscConfig {
+                leadoff_comparator_enable: false,
+                wct_to_rld_enable: false,
+                single_shot_mode: false,
+                respiration_freq: ResperationFreq::KHz64,
+            }
+        }
+    }
+
+    /// Respiration modulation frequency
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+    #[repr(u8)]
+    pub enum ResperationFreq {
+        /// 64 kHz modulation clock
+        KHz64 = 0b000,
+        /// 32 kHz modulationclock
+        KHz32 = 0b001,
+        /// 16kHz square wave on GPIO3 and GPIO04.
+        /// Output on GPIO4 is 180 degree out of phase with GPIO3.
+        KHz16 = 0b010,
+        /// 8kHz square wave on GPIO3 and GPIO04.
+        /// Output on GPIO4 is 180 degree out of phase with GPIO3.
+        KHz8 = 0b011,
+        /// 4kHz square wave on GPIO3 and GPIO04.
+        /// Output on GPIO4 is 180 degree out of phase with GPIO3.
+        KHz4 = 0b100,
+        /// 2kHz square wave on GPIO3 and GPIO04.
+        /// Output on GPIO4 is 180 degree out of phase with GPIO3.
+        KHz2 = 0b101,
+        /// 1kHz square wave on GPIO3 and GPIO04.
+        /// Output on GPIO4 is 180 degree out of phase with GPIO3.
+        KHz1 = 0b110,
+        /// 500Hz square wave on GPIO3 and GPIO04.
+        /// Output on GPIO4 is 180 degree out of phase with GPIO3.
+        Hz500 = 0b111,
+    }
+
+    // 0x17
+    bitfield! {
+        /// Configuration Register 4
+        pub struct Config4Reg(u8);
+        impl Debug;
+
+        /// Lead-off comparator power-down
+        ///
+        /// This bit powers down the lead-off comparators.
+        ///
+        ///   - 0 = Lead-off comparators disabled
+        ///   - 1 = Lead-off comparators enabled
+        ///
+        pub pd_loff_comp, set_pd_loff_comp : 1;
+
+        /// Connects the WCT to the RLD
+        ///
+        /// This bit connects WCT to RLD.
+        ///
+        ///   - 0 = WCTto RLD connection off
+        ///   - 1 = WCTto RLD connection on
+        ///
+        pub wct_to_rld, set_wct_to_rld : 2;
+
+        /// Single-shot conversion
+        ///
+        /// This bit sets the conversion mode.
+        ///
+        ///   - 0 = Continuous conversion mode
+        ///   - 1 = Single-shotmode
+        ///
+        pub single_shot, set_single_shot : 3;
+
+        /// Respiration modulation frequency
+        ///
+        /// These bits control the respiration control frequency when `RESP_CTRL`[1:0] = 10 or
+        /// `RESP_CTRL`[1:0]= 10
+        ///
+        ///   - 000 = 64 kHz modulation clock
+        ///   - 001 = 32 kHz modulationclock
+        ///   - 010 = 16kHz square wave on GPIO3 and GPIO04. Output on GPIO4 is 180 degree out of phase with GPIO3.
+        ///   - 011 = 8kHz square wave on GPIO3 and GPIO04. Output on GPIO4 is 180 degree out of phase with GPIO3.
+        ///   - 100 = 4kHz square wave on GPIO3 and GPIO04. Output on GPIO4 is 180 degree out of phase with GPIO3.
+        ///   - 101 = 2kHz square wave on GPIO3 and GPIO04. Output on GPIO4 is 180 degree out of phase with GPIO3.
+        ///   - 110 = 1kHz square wave on GPIO3 and GPIO04. Output on GPIO4 is 180 degree out of phase with GPIO3.
+        ///   - 111 = 500Hz square wave on GPIO3 and GPIO04. Output on GPIO4 is 180 degree out of phase with GPIO3.
+        ///
+        /// Modes 000 and 001 are modulation frequencies in internal and external respiration
+        /// modes. In internal respiration mode, the control signals appear at the `RESP_MODP` and
+        /// `RESP_MODN` terminals. All other bit settings generatei square waves as described above
+        /// on GPIO4 and GPIO3.
+        ///
+        pub resp_freq, set_resp_freq : 7, 5;
+    }
+
+    impl From<MiscConfig> for Config4Reg {
+        fn from(param: MiscConfig) -> Self {
+            let mut reg = Config4Reg(0);
+            reg.set_pd_loff_comp(param.leadoff_comparator_enable);
+            reg.set_wct_to_rld(param.wct_to_rld_enable);
+            reg.set_single_shot(param.single_shot_mode);
+            reg.set_resp_freq(param.respiration_freq as u8);
+            reg
+        }
+    }
+
+    impl TryFrom<Config4Reg> for MiscConfig {
+        type Error = u8;
+
+        fn try_from(reg: Config4Reg) -> Result<Self, Self::Error> {
+            Ok(MiscConfig {
+                leadoff_comparator_enable: reg.pd_loff_comp(),
+                wct_to_rld_enable: reg.wct_to_rld(),
+                single_shot_mode: reg.single_shot(),
+                respiration_freq: ResperationFreq::try_from(reg.resp_freq()).map_err(|_| reg.0)?,
+            })
+        }
+    }
 }
 
 pub mod chan {
@@ -658,10 +785,9 @@ pub mod chan {
     }
 }
 
-
 pub mod loff {
     use super::*;
-    
+
     /// Lead-off control configuration
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct LeadOffControl {
@@ -670,7 +796,20 @@ pub mod loff {
         pub detection_mode: LeadOffDetectMode,
         pub comparator_threshold: LeadOffCompThreshold,
     }
-    
+
+    impl Default for LeadOffControl {
+        fn default() -> Self {
+            LeadOffControl {
+                frequency: LeadOffFreq::Default,
+                magnitude: LeadOffMagnitude::nA_6,
+                detection_mode: LeadOffDetectMode::CurrentSource,
+                comparator_threshold: LeadOffCompThreshold::PositiveSide(
+                    CompPositiveSide::Pct_95_5,
+                ),
+            }
+        }
+    }
+
     /// Lead-off frequency
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
@@ -689,7 +828,7 @@ pub mod loff {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum LeadOffMagnitude {
-        nA_6  = 0b00,
+        nA_6 = 0b00,
         nA_12 = 0b01,
         nA_18 = 0b10,
         nA_24 = 0b11,
@@ -703,7 +842,7 @@ pub mod loff {
         PullUpDown = 0b1,
     }
     impl_from_enum_to_bool!(LeadOffDetectMode);
-    
+
     /// Lead-off comparator threshold
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum LeadOffCompThreshold {
@@ -747,7 +886,7 @@ pub mod loff {
         Pct_25_0 = 0b110,
         Pct_30_0 = 0b111,
     }
-    
+
     // 0x04
     bitfield! {
         /// The lead-off control register configures the lead-off detection operation
@@ -825,11 +964,185 @@ pub mod loff {
         type Error = u8;
 
         fn try_from(reg: LeadOffControlReg) -> Result<Self, Self::Error> {
-            Ok(LeadOffControl{
-                frequency: LeadOffFreq::try_from(reg.flead_off()).map_err(|_|reg.0)?,
-                magnitude: LeadOffMagnitude::try_from(reg.ilead_off()).map_err(|_|reg.0)?,
-                detection_mode: LeadOffDetectMode::try_from(reg.vlead_off_en() as u8).map_err(|_|reg.0)?,
-                comparator_threshold: LeadOffCompThreshold::PositiveSide(CompPositiveSide::try_from(reg.flead_off()).map_err(|_|reg.0)?),
+            Ok(LeadOffControl {
+                frequency: LeadOffFreq::try_from(reg.flead_off()).map_err(|_| reg.0)?,
+                magnitude: LeadOffMagnitude::try_from(reg.ilead_off()).map_err(|_| reg.0)?,
+                detection_mode: LeadOffDetectMode::try_from(reg.vlead_off_en() as u8)
+                    .map_err(|_| reg.0)?,
+                comparator_threshold: LeadOffCompThreshold::PositiveSide(
+                    CompPositiveSide::try_from(reg.flead_off()).map_err(|_| reg.0)?,
+                ),
+            })
+        }
+    }
+
+    /// Lead-off sense setup
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct LeadOffSense {
+        pub ch1_enable: bool,
+        pub ch2_enable: bool,
+        pub ch3_enable: bool,
+        pub ch4_enable: bool,
+        pub ch5_enable: bool,
+        pub ch6_enable: bool,
+        pub ch7_enable: bool,
+        pub ch8_enable: bool,
+    }
+
+    impl Default for LeadOffSense {
+        fn default() -> Self {
+            LeadOffSense {
+                ch1_enable: false,
+                ch2_enable: false,
+                ch3_enable: false,
+                ch4_enable: false,
+                ch5_enable: false,
+                ch6_enable: false,
+                ch7_enable: false,
+                ch8_enable: false,
+            }
+        }
+    }
+
+    // 0x0F-0x10
+    bitfield! {
+        /// LOFF_SENSP/N : Positive/Negative Signal Lead-Off Detection Register
+        pub struct LeadOffSenseReg(u8);
+        impl Debug;
+
+        /// INxP/N leadoff
+        ///
+        /// Enable lead-off detection on INxP/N
+        ///
+        ///   - 0: Disabled
+        ///   - 1: Enabled
+        ///
+        pub loff1, set_loff1 : 0;
+        pub loff2, set_loff2 : 1;
+        pub loff3, set_loff3 : 2;
+        pub loff4, set_loff4 : 3;
+        pub loff5, set_loff5 : 4;
+        pub loff6, set_loff6 : 5;
+        pub loff7, set_loff7 : 6;
+        pub loff8, set_loff8 : 7;
+    }
+
+    impl From<LeadOffSense> for LeadOffSenseReg {
+        fn from(param: LeadOffSense) -> Self {
+            let mut reg = LeadOffSenseReg(0);
+            reg.set_loff1(param.ch1_enable);
+            reg.set_loff2(param.ch2_enable);
+            reg.set_loff3(param.ch3_enable);
+            reg.set_loff4(param.ch4_enable);
+            reg.set_loff5(param.ch5_enable);
+            reg.set_loff6(param.ch6_enable);
+            reg.set_loff7(param.ch7_enable);
+            reg.set_loff8(param.ch8_enable);
+            reg
+        }
+    }
+
+    impl TryFrom<LeadOffSenseReg> for LeadOffSense {
+        type Error = u8;
+
+        fn try_from(reg: LeadOffSenseReg) -> Result<Self, Self::Error> {
+            Ok(LeadOffSense {
+                ch1_enable: reg.loff1(),
+                ch2_enable: reg.loff2(),
+                ch3_enable: reg.loff3(),
+                ch4_enable: reg.loff4(),
+                ch5_enable: reg.loff5(),
+                ch6_enable: reg.loff6(),
+                ch7_enable: reg.loff7(),
+                ch8_enable: reg.loff8(),
+            })
+        }
+    }
+
+    /// Controls the direction of the current used for lead-off derivation
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct LeadOffFlip {
+        /// Channel N polarity flip
+        pub ch1_flip: bool,
+        pub ch2_flip: bool,
+        pub ch3_flip: bool,
+        pub ch4_flip: bool,
+        pub ch5_flip: bool,
+        pub ch6_flip: bool,
+        pub ch7_flip: bool,
+        pub ch8_flip: bool,
+    }
+
+    impl Default for LeadOffFlip {
+        fn default() -> Self {
+            LeadOffFlip {
+                ch1_flip: false,
+                ch2_flip: false,
+                ch3_flip: false,
+                ch4_flip: false,
+                ch5_flip: false,
+                ch6_flip: false,
+                ch7_flip: false,
+                ch8_flip: false,
+            }
+        }
+    }
+
+    // 0x11
+    bitfield! {
+        /// LOFF_FLIP: Lead-Off Flip Register
+        ///
+        /// This register controls the direction of the current used for lead-off derivation.
+        ///
+        pub struct LeadOffFlipReg(u8);
+        impl Debug;
+
+        /// Channel X LOFF Polarity Flip
+        ///
+        /// Flip the pullup/pulldown polarity of the current source or
+        /// resistor on channel N for lead-off derivation.
+        ///
+        ///   - 0: No Flip: INXP is pulled to `AVDD` and INXN pulled to `AVSS`
+        ///   - 1: Flipped: INXP is pulled to `AVSS` and INXN pulled to `AVDD`
+        ///
+        pub flip1, set_flip1 : 0;
+        pub flip2, set_flip2 : 1;
+        pub flip3, set_flip3 : 2;
+        pub flip4, set_flip4 : 3;
+        pub flip5, set_flip5 : 4;
+        pub flip6, set_flip6 : 5;
+        pub flip7, set_flip7 : 6;
+        pub flip8, set_flip8 : 7;
+    }
+
+    impl From<LeadOffFlip> for LeadOffFlipReg {
+        fn from(param: LeadOffFlip) -> Self {
+            let mut reg = LeadOffFlipReg(0);
+            reg.set_flip1(param.ch1_flip);
+            reg.set_flip2(param.ch2_flip);
+            reg.set_flip3(param.ch3_flip);
+            reg.set_flip4(param.ch4_flip);
+            reg.set_flip5(param.ch5_flip);
+            reg.set_flip6(param.ch6_flip);
+            reg.set_flip7(param.ch7_flip);
+            reg.set_flip8(param.ch8_flip);
+            reg
+        }
+    }
+
+    impl TryFrom<LeadOffFlipReg> for LeadOffFlip {
+        type Error = u8;
+
+        fn try_from(reg: LeadOffFlipReg) -> Result<Self, Self::Error> {
+            Ok(LeadOffFlip {
+                ch1_flip: reg.flip1(),
+                ch2_flip: reg.flip2(),
+                ch3_flip: reg.flip3(),
+                ch4_flip: reg.flip4(),
+                ch5_flip: reg.flip5(),
+                ch6_flip: reg.flip6(),
+                ch7_flip: reg.flip7(),
+                ch8_flip: reg.flip8(),
             })
         }
     }
@@ -838,26 +1151,27 @@ pub mod loff {
 pub mod gpio {
     use super::*;
 
+    /// GPIO configuration
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct Gpio {
-        pub mode: [GpioMode;4],
-        pub data: [bool;4],
+        pub mode: [GpioMode; 4],
+        pub data: [bool; 4],
     }
 
     impl Default for Gpio {
         fn default() -> Self {
-            Gpio{
-                mode: [GpioMode::Input;4],
-                data: [false;4],
+            Gpio {
+                mode: [GpioMode::Input; 4],
+                data: [false; 4],
             }
         }
     }
-    
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum GpioMode {
         Output = 0b0,
-        Input  = 0b1,
+        Input = 0b1,
     }
     impl_from_enum_to_bool!(GpioMode);
 
@@ -871,7 +1185,7 @@ pub mod gpio {
         ///
         pub struct GpioReg(u8);
         impl Debug;
-        
+
         /// GPIO control (corresponding GPIOD)
         ///
         /// These bits determine if the corresponding GPIOD pin is an input or output.
@@ -917,19 +1231,14 @@ pub mod gpio {
         type Error = u8;
 
         fn try_from(reg: GpioReg) -> Result<Self, Self::Error> {
-            Ok(Gpio{
+            Ok(Gpio {
                 mode: [
                     GpioMode::try_from(reg.gpioc1() as u8).map_err(|_| reg.0)?,
                     GpioMode::try_from(reg.gpioc2() as u8).map_err(|_| reg.0)?,
                     GpioMode::try_from(reg.gpioc3() as u8).map_err(|_| reg.0)?,
                     GpioMode::try_from(reg.gpioc4() as u8).map_err(|_| reg.0)?,
                 ],
-                data: [
-                    reg.gpiod1(),
-                    reg.gpiod2(),
-                    reg.gpiod3(),
-                    reg.gpiod4(),
-                ],
+                data: [reg.gpiod1(), reg.gpiod2(), reg.gpiod3(), reg.gpiod4()],
             })
         }
     }
