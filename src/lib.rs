@@ -9,6 +9,7 @@ use ehal::spi::FullDuplex;
 use embedded_hal as ehal;
 
 pub mod command;
+pub mod data;
 pub mod register;
 pub mod spi;
 
@@ -145,6 +146,17 @@ where
             spi: spi::SpiDevice::new(spi, ncs),
             _d: core::marker::PhantomData,
         }
+    }
+
+    pub fn read_data<'frame, DF: data::DataFrame<'frame>>(
+        &mut self,
+        _data_frame: &'frame mut DF,
+        _delay: impl DelayUs<u32>,
+    ) -> Ads129xResult<(), E> {
+        
+        //let mut words = [command::Command::RDATA as u8 | 0x00, 0x00, 0xA5];
+        //let res = self.spi.transfer(&mut words, delay)?;
+        todo!()
     }
 
     read_reg!(FAM: ads1298, FN: config, REG: CONFIG1 (conf::Config <= conf::Config1Reg));
