@@ -58,7 +58,7 @@ fn test() {
         SpiTransaction::write(vec![0x44, 0x00, 0b0000_1111]),
         // Config 4
         SpiTransaction::write(vec![0x57, 0x00, 0b0000_0010]),
-        //SpiTransaction::transfer(vec![3, 4], vec![5, 6]),
+        // SpiTransaction::transfer(vec![3, 4], vec![5, 6]),
     ];
 
     let ncs = MockNcs;
@@ -71,9 +71,9 @@ fn test() {
     // Basic setup
 
     let config = Config {
-        mode: Mode::LowPower(SampleRateLP::KSps1),
+        mode:             Mode::LowPower(SampleRateLP::KSps1),
         osc_clock_output: true,
-        daisy_chain: false,
+        daisy_chain:      false,
     };
     ads1298.set_config(config, MockDelay).unwrap();
 
@@ -96,7 +96,7 @@ fn test() {
     // Channel setup
 
     let chan = Chan::PowerUp {
-        gain: ChannelGain::X4,
+        gain:  ChannelGain::X4,
         input: ChannelInput::Normal,
     };
     ads1298.set_chan_1(chan, MockDelay).unwrap();

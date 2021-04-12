@@ -9,11 +9,7 @@ macro_rules! impl_from_enum_to_bool {
     ($enum_name:ident) => {
         impl From<$enum_name> for bool {
             fn from(v: $enum_name) -> bool {
-                if v as u8 == 0x00 {
-                    false
-                } else {
-                    true
-                }
+                if v as u8 == 0x00 { false } else { true }
             }
         }
     };
@@ -24,60 +20,60 @@ macro_rules! impl_from_enum_to_bool {
 #[derive(Debug, Clone, Copy)]
 pub enum Register {
     /// ID Control Register (Factory-Programmed, Read-Only)
-    ID = 0x00,
+    ID         = 0x00,
     /// Configuration Register 1
-    CONFIG1 = 0x01,
+    CONFIG1    = 0x01,
     /// Configuration Register 2
-    CONFIG2 = 0x02,
+    CONFIG2    = 0x02,
     /// Configuration Register 3
-    CONFIG3 = 0x03,
+    CONFIG3    = 0x03,
     /// Lead-Off Control Register
-    LOFF = 0x04,
+    LOFF       = 0x04,
 
     /// Channel 1 Settings
-    CH1SET = 0x05,
+    CH1SET     = 0x05,
     /// Channel 2 Settings
-    CH2SET = 0x06,
+    CH2SET     = 0x06,
     /// Channel 3 Settings
-    CH3SET = 0x07,
+    CH3SET     = 0x07,
     /// Channel 4 Settings
-    CH4SET = 0x08,
+    CH4SET     = 0x08,
     /// Channel 5 Settings
-    CH5SET = 0x09,
+    CH5SET     = 0x09,
     /// Channel 6 Settings
-    CH6SET = 0x0A,
+    CH6SET     = 0x0A,
     /// Channel 7 Settings
-    CH7SET = 0x0B,
+    CH7SET     = 0x0B,
     /// Channel 8 Settings
-    CH8SET = 0x0C,
+    CH8SET     = 0x0C,
 
     /// Right Leg Drive Positive Sense Selection
-    RLD_SENSP = 0x0D,
+    RLD_SENSP  = 0x0D,
     /// Right Leg Drive Negative Sense Selection
-    RLD_SENSN = 0x0E,
+    RLD_SENSN  = 0x0E,
     /// Lead-Off Positive Sense Selection
     LOFF_SENSP = 0x0F,
     /// Lead-Off Negative Sense Selection
     LOFF_SENSN = 0x10,
     /// Lead-off Flip
-    LOFF_FLIP = 0x11,
+    LOFF_FLIP  = 0x11,
     /// Lead-Off Positive Signal Status
     LOFF_STATP = 0x12,
     /// Lead-Off Negative Signal Status
     LOFF_STATN = 0x13,
 
     /// General-Purpose I/O Register
-    GPIO = 0x14,
+    GPIO       = 0x14,
     /// Pace Detect Register
-    PACE = 0x15,
+    PACE       = 0x15,
     /// Respiration Control Register
-    RESP = 0x16,
+    RESP       = 0x16,
     /// Configuration Register 4
-    CONFIG4 = 0x17,
+    CONFIG4    = 0x17,
     /// Wilson Central Terminal and Augmented Lead Control Register 1
-    WCT1 = 0x18,
+    WCT1       = 0x18,
     /// Wilson Central Terminal and Augmented Lead Control Register 2
-    WCT2 = 0x19,
+    WCT2       = 0x19,
 }
 
 pub mod conf {
@@ -87,19 +83,19 @@ pub mod conf {
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct Config {
         /// Device mode
-        pub mode: Mode,
+        pub mode:             Mode,
         /// Oscillator clock output
         pub osc_clock_output: bool,
         /// Daisy chain or multiple readback mode
-        pub daisy_chain: bool,
+        pub daisy_chain:      bool,
     }
 
     impl Default for Config {
         fn default() -> Self {
             Config {
-                mode: Mode::default(),
+                mode:             Mode::default(),
                 osc_clock_output: false,
-                daisy_chain: true,
+                daisy_chain:      true,
             }
         }
     }
@@ -123,10 +119,10 @@ pub mod conf {
     pub enum SampleRateHR {
         KSps32 = 0b000,
         KSps16 = 0b001,
-        Sps8k = 0b010,
-        Sps4k = 0b011,
-        Sps2k = 0b100,
-        Sps1k = 0b101,
+        Sps8k  = 0b010,
+        Sps4k  = 0b011,
+        Sps2k  = 0b100,
+        Sps1k  = 0b101,
         Sps500 = 0b110,
     }
 
@@ -135,10 +131,10 @@ pub mod conf {
     #[repr(u8)]
     pub enum SampleRateLP {
         KSps16 = 0b000,
-        KSps8 = 0b001,
-        KSps4 = 0b010,
-        KSps2 = 0b011,
-        KSps1 = 0b100,
+        KSps8  = 0b001,
+        KSps4  = 0b010,
+        KSps2  = 0b011,
+        KSps1  = 0b100,
         Sps500 = 0b101,
         Sps250 = 0b110,
     }
@@ -202,7 +198,7 @@ pub mod conf {
 
         fn try_from(reg: Config1Reg) -> Result<Self, Self::Error> {
             Ok(Config {
-                mode: match reg.high_resolution() {
+                mode:             match reg.high_resolution() {
                     true => Mode::HighResolution(
                         SampleRateHR::try_from(reg.output_date_rate()).map_err(|_| reg.0)?,
                     ),
@@ -211,7 +207,7 @@ pub mod conf {
                     ),
                 },
                 osc_clock_output: reg.clock_enable(),
-                daisy_chain: !reg.daisy_disable(),
+                daisy_chain:      !reg.daisy_disable(),
             })
         }
     }
@@ -224,9 +220,9 @@ pub mod conf {
         /// Test signal amplitude
         pub amplitude: TestSignalAmp,
         /// Test signal source
-        pub source: TestSignalSource,
+        pub source:    TestSignalSource,
         /// WCT chopping scheme
-        pub wct_chop: WctChoppingFreq,
+        pub wct_chop:  WctChoppingFreq,
     }
 
     impl Default for TestSignalConfig {
@@ -234,8 +230,8 @@ pub mod conf {
             TestSignalConfig {
                 frequency: TestSignalFreq::PulsedAtFclk_div_2_21,
                 amplitude: TestSignalAmp::Mode_x1,
-                source: TestSignalSource::External,
-                wct_chop: WctChoppingFreq::Variable,
+                source:    TestSignalSource::External,
+                wct_chop:  WctChoppingFreq::Variable,
             }
         }
     }
@@ -249,9 +245,9 @@ pub mod conf {
         /// Pulsed at `fCLK` / 2**20
         PulsedAtFclk_div_2_20 = 0b01,
         /// Not used
-        NotUsed = 0b10,
+        NotUsed               = 0b10,
         /// At dc
-        AtDC = 0b11,
+        AtDC                  = 0b11,
     }
 
     /// Test signal amplitude settings
@@ -283,7 +279,7 @@ pub mod conf {
         /// Chopping frequency varies, see datasheet.
         Variable = 0b0,
         /// Chopping frequency constant at `fMOD`/ 16
-        Const = 0b1,
+        Const    = 0b1,
     }
     impl_from_enum_to_bool!(WctChoppingFreq);
 
@@ -352,8 +348,8 @@ pub mod conf {
             Ok(TestSignalConfig {
                 frequency: TestSignalFreq::try_from(reg.test_freq() as u8).map_err(|_| reg.0)?,
                 amplitude: TestSignalAmp::try_from(reg.test_amp() as u8).map_err(|_| reg.0)?,
-                source: TestSignalSource::try_from(reg.int_test() as u8).map_err(|_| reg.0)?,
-                wct_chop: WctChoppingFreq::try_from(reg.wct_chop() as u8).map_err(|_| reg.0)?,
+                source:    TestSignalSource::try_from(reg.int_test() as u8).map_err(|_| reg.0)?,
+                wct_chop:  WctChoppingFreq::try_from(reg.wct_chop() as u8).map_err(|_| reg.0)?,
             })
         }
     }
@@ -366,7 +362,6 @@ pub mod conf {
         ///
         ///   - false = connected
         ///   - true = not connected
-        ///
         pub leadoff_status: bool,
 
         /// RLD sense function enable
@@ -380,7 +375,8 @@ pub mod conf {
 
         /// RLD measurement
         ///   - 0 = Open
-        ///   - 1 = `RLD_IN` signal is routed to the channel that has the MUX_Setting 010 (VREF)
+        ///   - 1 = `RLD_IN` signal is routed to the channel that has the
+        ///     MUX_Setting 010 (VREF)
         pub measurement_enable: bool,
 
         /// Reference voltage 4V enable
@@ -505,13 +501,14 @@ pub mod conf {
 
         fn try_from(reg: Config3Reg) -> Result<Self, Self::Error> {
             Ok(RldConfig {
-                leadoff_status: reg.rld_stat(),
+                leadoff_status:       reg.rld_stat(),
                 leadoff_sense_enable: reg.rld_loff_sens(),
-                buffer_power_enable: reg.pd_rld(),
-                ref_source: RldRefSource::try_from(reg.rldref_int() as u8).map_err(|_| reg.0)?,
-                measurement_enable: reg.rld_meas(),
-                vref_4V_enable: reg.vref_4v(),
-                ref_buffer_enable: reg.pd_refbuf(),
+                buffer_power_enable:  reg.pd_rld(),
+                ref_source:           RldRefSource::try_from(reg.rldref_int() as u8)
+                    .map_err(|_| reg.0)?,
+                measurement_enable:   reg.rld_meas(),
+                vref_4V_enable:       reg.vref_4v(),
+                ref_buffer_enable:    reg.pd_refbuf(),
             })
         }
     }
@@ -520,18 +517,18 @@ pub mod conf {
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct MiscConfig {
         pub leadoff_comparator_enable: bool,
-        pub wct_to_rld_enable: bool,
-        pub single_shot_mode: bool,
-        pub respiration_freq: ResperationFreq,
+        pub wct_to_rld_enable:         bool,
+        pub single_shot_mode:          bool,
+        pub respiration_freq:          ResperationFreq,
     }
 
     impl Default for MiscConfig {
         fn default() -> Self {
             MiscConfig {
                 leadoff_comparator_enable: false,
-                wct_to_rld_enable: false,
-                single_shot_mode: false,
-                respiration_freq: ResperationFreq::KHz64,
+                wct_to_rld_enable:         false,
+                single_shot_mode:          false,
+                respiration_freq:          ResperationFreq::KHz64,
             }
         }
     }
@@ -549,16 +546,16 @@ pub mod conf {
         KHz16 = 0b010,
         /// 8kHz square wave on GPIO3 and GPIO04.
         /// Output on GPIO4 is 180 degree out of phase with GPIO3.
-        KHz8 = 0b011,
+        KHz8  = 0b011,
         /// 4kHz square wave on GPIO3 and GPIO04.
         /// Output on GPIO4 is 180 degree out of phase with GPIO3.
-        KHz4 = 0b100,
+        KHz4  = 0b100,
         /// 2kHz square wave on GPIO3 and GPIO04.
         /// Output on GPIO4 is 180 degree out of phase with GPIO3.
-        KHz2 = 0b101,
+        KHz2  = 0b101,
         /// 1kHz square wave on GPIO3 and GPIO04.
         /// Output on GPIO4 is 180 degree out of phase with GPIO3.
-        KHz1 = 0b110,
+        KHz1  = 0b110,
         /// 500Hz square wave on GPIO3 and GPIO04.
         /// Output on GPIO4 is 180 degree out of phase with GPIO3.
         Hz500 = 0b111,
@@ -636,9 +633,10 @@ pub mod conf {
         fn try_from(reg: Config4Reg) -> Result<Self, Self::Error> {
             Ok(MiscConfig {
                 leadoff_comparator_enable: reg.pd_loff_comp(),
-                wct_to_rld_enable: reg.wct_to_rld(),
-                single_shot_mode: reg.single_shot(),
-                respiration_freq: ResperationFreq::try_from(reg.resp_freq()).map_err(|_| reg.0)?,
+                wct_to_rld_enable:         reg.wct_to_rld(),
+                single_shot_mode:          reg.single_shot(),
+                respiration_freq:          ResperationFreq::try_from(reg.resp_freq())
+                    .map_err(|_| reg.0)?,
             })
         }
     }
@@ -652,7 +650,7 @@ pub mod chan {
     pub enum Chan {
         PowerUp {
             input: ChannelInput,
-            gain: ChannelGain,
+            gain:  ChannelGain,
         },
         PowerDown,
     }
@@ -661,7 +659,7 @@ pub mod chan {
         fn default() -> Self {
             Chan::PowerUp {
                 input: ChannelInput::Normal,
-                gain: ChannelGain::X6,
+                gain:  ChannelGain::X6,
             }
         }
     }
@@ -671,33 +669,33 @@ pub mod chan {
     #[repr(u8)]
     pub enum ChannelInput {
         /// Normal electrode input
-        Normal = 0b000,
+        Normal  = 0b000,
         /// Input shorted (for offset or noise measurements)
         Shorted = 0b001,
         /// Used in conjunction with `RLD_MEAS` bit for RLD measurements.
-        Rld = 0b010,
+        Rld     = 0b010,
         /// MVDD for supply measurement
-        MVDD = 0b011,
+        MVDD    = 0b011,
         /// Temperature sensor
-        Temp = 0b100,
+        Temp    = 0b100,
         /// Test signal
         TestSig = 0b101,
         /// RLD_DRP (positiv eelectrode is the driver)
-        RldDrp = 0b110,
+        RldDrp  = 0b110,
         /// RLD_DRN (negative electrode is the driver)
-        RldDrn = 0b111,
+        RldDrn  = 0b111,
     }
 
     /// PGA gain
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum ChannelGain {
-        X6 = 0b000,
-        X1 = 0b001,
-        X2 = 0b010,
-        X3 = 0b011,
-        X4 = 0b100,
-        X8 = 0b101,
+        X6  = 0b000,
+        X1  = 0b001,
+        X2  = 0b010,
+        X3  = 0b011,
+        X4  = 0b100,
+        X8  = 0b101,
         X12 = 0b110,
     }
 
@@ -778,7 +776,7 @@ pub mod chan {
             } else {
                 Chan::PowerUp {
                     input: ChannelInput::try_from(reg.mux()).map_err(|_| reg.0)?,
-                    gain: ChannelGain::try_from(reg.gain()).map_err(|_| reg.0)?,
+                    gain:  ChannelGain::try_from(reg.gain()).map_err(|_| reg.0)?,
                 }
             })
         }
@@ -791,18 +789,18 @@ pub mod loff {
     /// Lead-off control configuration
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct LeadOffControl {
-        pub frequency: LeadOffFreq,
-        pub magnitude: LeadOffMagnitude,
-        pub detection_mode: LeadOffDetectMode,
+        pub frequency:            LeadOffFreq,
+        pub magnitude:            LeadOffMagnitude,
+        pub detection_mode:       LeadOffDetectMode,
         pub comparator_threshold: LeadOffCompThreshold,
     }
 
     impl Default for LeadOffControl {
         fn default() -> Self {
             LeadOffControl {
-                frequency: LeadOffFreq::Default,
-                magnitude: LeadOffMagnitude::nA_6,
-                detection_mode: LeadOffDetectMode::CurrentSource,
+                frequency:            LeadOffFreq::Default,
+                magnitude:            LeadOffMagnitude::nA_6,
+                detection_mode:       LeadOffDetectMode::CurrentSource,
                 comparator_threshold: LeadOffCompThreshold::PositiveSide(
                     CompPositiveSide::Pct_95_5,
                 ),
@@ -817,18 +815,18 @@ pub mod loff {
         /// Default value
         Default = 0b00,
         /// AC lead-offdetection at `fDR`/ 4
-        AC = 0b01,
+        AC      = 0b01,
         /// Do not use
-        NotUse = 0b10,
+        NotUse  = 0b10,
         /// DC lead-off detection turned on
-        DC = 0b11,
+        DC      = 0b11,
     }
 
     /// Lead-off current magnitude
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum LeadOffMagnitude {
-        nA_6 = 0b00,
+        nA_6  = 0b00,
         nA_12 = 0b01,
         nA_18 = 0b10,
         nA_24 = 0b11,
@@ -839,7 +837,7 @@ pub mod loff {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     pub enum LeadOffDetectMode {
         CurrentSource = 0b0,
-        PullUpDown = 0b1,
+        PullUpDown    = 0b1,
     }
     impl_from_enum_to_bool!(LeadOffDetectMode);
 
@@ -877,8 +875,8 @@ pub mod loff {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
     #[repr(u8)]
     pub enum CompNegativeSide {
-        Pct_5_0 = 0b000,
-        Pct_7_5 = 0b001,
+        Pct_5_0  = 0b000,
+        Pct_7_5  = 0b001,
         Pct_10_0 = 0b010,
         Pct_12_5 = 0b011,
         Pct_15_0 = 0b100,
@@ -965,9 +963,10 @@ pub mod loff {
 
         fn try_from(reg: LeadOffControlReg) -> Result<Self, Self::Error> {
             Ok(LeadOffControl {
-                frequency: LeadOffFreq::try_from(reg.flead_off()).map_err(|_| reg.0)?,
-                magnitude: LeadOffMagnitude::try_from(reg.ilead_off()).map_err(|_| reg.0)?,
-                detection_mode: LeadOffDetectMode::try_from(reg.vlead_off_en() as u8)
+                frequency:            LeadOffFreq::try_from(reg.flead_off()).map_err(|_| reg.0)?,
+                magnitude:            LeadOffMagnitude::try_from(reg.ilead_off())
+                    .map_err(|_| reg.0)?,
+                detection_mode:       LeadOffDetectMode::try_from(reg.vlead_off_en() as u8)
                     .map_err(|_| reg.0)?,
                 comparator_threshold: LeadOffCompThreshold::PositiveSide(
                     CompPositiveSide::try_from(reg.flead_off()).map_err(|_| reg.0)?,
@@ -1171,7 +1170,7 @@ pub mod gpio {
     #[repr(u8)]
     pub enum GpioMode {
         Output = 0b0,
-        Input = 0b1,
+        Input  = 0b1,
     }
     impl_from_enum_to_bool!(GpioMode);
 

@@ -9,8 +9,8 @@ use ehal::spi::FullDuplex;
 use embedded_hal as ehal;
 
 pub mod command;
-pub mod data;
 pub mod common;
+pub mod data;
 pub mod spi;
 
 pub mod ads1292;
@@ -38,7 +38,11 @@ macro_rules! impl_cmd {
         }
     };
     ($fn_name:ident, $command:ident) => {
-        impl_cmd!(__INNER: concat!("Spi command ", stringify!($command)), $fn_name, $command);
+        impl_cmd!(
+            __INNER: concat!("Spi command ", stringify!($command)),
+            $fn_name,
+            $command
+        );
     };
 }
 
@@ -105,7 +109,7 @@ pub type Ads129xResult<T, E> = Result<T, Ads129xError<E>>;
 
 pub struct Ads129x<SPI, NCS, DEV, const CH: usize> {
     spi: spi::SpiDevice<SPI, NCS>,
-    _d: core::marker::PhantomData<DEV>,
+    _d:  core::marker::PhantomData<DEV>,
 }
 
 impl<SPI, NCS, DEV, E, const CH: usize> Ads129x<SPI, NCS, DEV, CH>
@@ -122,10 +126,7 @@ where
     impl_cmd!(set_continuous_mode, RDATAC);
     impl_cmd!(set_command_mode, SDATAC);
 
-    pub fn read_id(
-        &mut self,
-        delay: impl DelayUs<u32>,
-    ) -> Ads129xResult<common::id::DevModel, E> {
+    pub fn read_id(&mut self, delay: impl DelayUs<u32>) -> Ads129xResult<common::id::DevModel, E> {
         let mut words = [command::Command::RREG as u8 | 0x00, 0x00, 0xA5];
         let res = self.spi.transfer(&mut words, delay)?;
 
@@ -149,7 +150,7 @@ where
     pub fn new_ads1292(spi: SPI, ncs: NCS) -> Self {
         Self {
             spi: spi::SpiDevice::new(spi, ncs),
-            _d: core::marker::PhantomData,
+            _d:  core::marker::PhantomData,
         }
     }
 
@@ -166,7 +167,7 @@ where
     pub fn new_ads1298(spi: SPI, ncs: NCS) -> Self {
         Self {
             spi: spi::SpiDevice::new(spi, ncs),
-            _d: core::marker::PhantomData,
+            _d:  core::marker::PhantomData,
         }
     }
 
@@ -175,9 +176,8 @@ where
         _data_frame: &'frame mut DF,
         _delay: impl DelayUs<u32>,
     ) -> Ads129xResult<(), E> {
-        
-        //let mut words = [command::Command::RDATA as u8 | 0x00, 0x00, 0xA5];
-        //let res = self.spi.transfer(&mut words, delay)?;
+        // let mut words = [command::Command::RDATA as u8 | 0x00, 0x00, 0xA5];
+        // let res = self.spi.transfer(&mut words, delay)?;
         todo!()
     }
 

@@ -21,7 +21,6 @@ bitfield! {
 
 #[repr(C, packed)]
 pub struct DataFrameCh<CHW, const CH_NUM: usize> {
-    pub status: [u8;3],
-    pub ch_data: [CHW;CH_NUM],
+    pub status:  [u8; 3],
+    pub ch_data: [CHW; CH_NUM],
 }
-

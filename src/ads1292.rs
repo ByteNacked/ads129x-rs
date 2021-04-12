@@ -7,29 +7,29 @@ use num_enum::TryFromPrimitive;
 #[derive(Debug, Clone, Copy)]
 pub enum Register {
     /// ID Control Register (Factory-Programmed, Read-Only)
-    ID = 0x00,
+    ID        = 0x00,
     /// Configuration Register 1
-    CONFIG1 = 0x01,
+    CONFIG1   = 0x01,
     /// Configuration Register 2
-    CONFIG2 = 0x02,
+    CONFIG2   = 0x02,
     /// Lead-Off Control Register
-    LOFF = 0x03,
+    LOFF      = 0x03,
     /// Channel 1 Settings
-    CH1SET = 0x04,
+    CH1SET    = 0x04,
     /// Channel 2 Settings
-    CH2SET = 0x05,
+    CH2SET    = 0x05,
     /// Right Leg Drive Sense Selection
-    RLD_SENS = 0x06,
+    RLD_SENS  = 0x06,
     /// Lead-Off Sense Selection
     LOFF_SENS = 0x07,
     /// Lead-Off Status
     LOFF_STAT = 0x08,
     /// Respiration Control Register 1
-    RESP1 = 0x09,
+    RESP1     = 0x09,
     /// Respiration Control Register 2    
-    RESP2 = 0x0A,
+    RESP2     = 0x0A,
     /// General-Purpose I/O Register
-    GPIO = 0x0B,
+    GPIO      = 0x0B,
 }
 
 pub mod conf {
@@ -37,7 +37,7 @@ pub mod conf {
 
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
     pub struct Config {
-        pub mode: Mode,
+        pub mode:        Mode,
         pub sample_rate: SampleRate,
     }
 
@@ -60,10 +60,10 @@ pub mod conf {
         Sps125 = 0b000,
         Sps250 = 0b001,
         Sps500 = 0b010,
-        KSps1 = 0b011,
-        KSps2 = 0b100,
-        KSps4 = 0b101,
-        KSps8 = 0b110,
+        KSps1  = 0b011,
+        KSps2  = 0b100,
+        KSps4  = 0b101,
+        KSps8  = 0b110,
     }
 
     impl Default for SampleRate {
@@ -100,7 +100,7 @@ pub mod conf {
 
         fn try_from(reg: Config1Reg) -> Result<Self, Self::Error> {
             Ok(Config {
-                mode: Mode::try_from(reg.single_shot() as u8).map_err(|_| reg.0)?,
+                mode:        Mode::try_from(reg.single_shot() as u8).map_err(|_| reg.0)?,
                 sample_rate: SampleRate::try_from(reg.oversampling()).map_err(|_| reg.0)?,
             })
         }
@@ -128,10 +128,10 @@ pub mod conf {
 #[derive(Debug)]
 #[repr(u8)]
 pub enum LeadOffCurrentMagnitude {
-    C6nA = 0b00,
-    C22nA = 0b01,
-    C6uA = 0b10,
-    C22uA = 0b11,
+    C6nA    = 0b00,
+    C22nA   = 0b01,
+    C6uA    = 0b10,
+    C22uA   = 0b11,
     Unknown = 0b111,
 }
 
@@ -187,13 +187,13 @@ bitfield! {
 #[derive(Debug)]
 #[repr(u8)]
 pub enum GainSetting {
-    G6 = 0b000,
-    G1 = 0b001,
-    G2 = 0b010,
-    G3 = 0b011,
-    G4 = 0b100,
-    G8 = 0b101,
-    G12 = 0b110,
+    G6      = 0b000,
+    G1      = 0b001,
+    G2      = 0b010,
+    G3      = 0b011,
+    G4      = 0b100,
+    G8      = 0b101,
+    G12     = 0b110,
     Unknown = 0b111,
 }
 
@@ -225,25 +225,25 @@ pub enum InputSelection {
     /// Normal electrode input (default)
     NormalElectrodeInput = 0b0000,
     /// Input shorted (for offset measurements)
-    InputShorted = 0b0001,
+    InputShorted         = 0b0001,
     /// RLD_MEASURE
-    RldMeasure = 0b0010,
+    RldMeasure           = 0b0010,
     /// MVDD for supply measurement
-    MVDD = 0b0011,
+    MVDD                 = 0b0011,
     /// Temperature sensor
-    TemperatureSensor = 0b0100,
+    TemperatureSensor    = 0b0100,
     /// Test signal
-    TestSignal = 0b0101,
+    TestSignal           = 0b0101,
     /// RLD_DRP (positive input is connected to RLDIN)
-    RldDrp = 0b0110,
+    RldDrp               = 0b0110,
     /// RLD_DRM (negative input is connected to RLDIN)
-    RldDrm = 0b0111,
+    RldDrm               = 0b0111,
     /// RLD_DRPM (both positive and negative inputs are connected to RLDIN)
-    RldDrpm = 0b1000,
+    RldDrpm              = 0b1000,
     /// Route IN3P and IN3N to channel 1 inputs
-    Channel3 = 0b1001,
-    /// The value was something unknown, might be anything other than the above    
-    Unknown = 0b1111,
+    Channel3             = 0b1001,
+    /// The value was something unknown, might be anything other than the above
+    Unknown              = 0b1111,
 }
 
 impl From<u8> for InputSelection {
@@ -287,9 +287,9 @@ bitfield! {
 #[repr(u8)]
 pub enum ChopFrequency {
     FmodDiv16 = 0b00,
-    FmodDiv2 = 0b10,
-    FmodDiv4 = 0b11,
-    Unknown = 0b01,
+    FmodDiv2  = 0b10,
+    FmodDiv4  = 0b11,
+    Unknown   = 0b01,
 }
 
 impl From<u8> for ChopFrequency {

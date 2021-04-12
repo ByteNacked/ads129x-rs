@@ -24,7 +24,8 @@ where
         SpiDevice { spi, ncs }
     }
 
-    /// Transfer the buffer to the device, the passed buffer will contain the read data.
+    /// Transfer the buffer to the device, the passed buffer will contain the
+    /// read data.
     #[inline]
     pub fn transfer<'buf>(
         &mut self,
