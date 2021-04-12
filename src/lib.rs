@@ -18,8 +18,10 @@ pub mod spi;
 pub mod ads1292;
 pub mod ads1298;
 
-#[doc(hidden)] pub struct Ads1292Family;
-#[doc(hidden)] pub struct Ads1298Family;
+#[doc(hidden)]
+pub struct Ads1292Family;
+#[doc(hidden)]
+pub struct Ads1298Family;
 
 #[derive(Debug)]
 pub enum Ads129xError<E> {
@@ -27,6 +29,8 @@ pub enum Ads129xError<E> {
     IdRegRead(common::id::IdRegError),
     /// Read bytes is invalid register value
     ReadInterpret(u8),
+    /// Status word missmatch
+    StatusWordMissmatch(u8),
     /// Spi transport error
     Spi(E),
 }
@@ -36,6 +40,66 @@ pub type Ads129xResult<T, E> = Result<T, Ads129xError<E>>;
 pub struct Ads129x<SPI, NCS, DEV, const CH: usize> {
     spi: spi::SpiDevice<SPI, NCS>,
     _d:  core::marker::PhantomData<DEV>,
+}
+
+impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1292Family, 2>
+where
+    SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
+    NCS: OutputPin<Error = core::convert::Infallible>,
+    E: core::fmt::Debug,
+{
+    /// Create ADS1292/ADS1292R device instance
+    pub fn new_ads1292(spi: SPI, ncs: NCS) -> Self {
+        Self {
+            spi: spi::SpiDevice::new(spi, ncs),
+            _d:  core::marker::PhantomData,
+        }
+    }
+}
+
+impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1298Family, 4>
+where
+    SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
+    NCS: OutputPin<Error = core::convert::Infallible>,
+    E: core::fmt::Debug,
+{
+    /// Create ADS1294/ADS1294R device instance
+    pub fn new_ads1294(spi: SPI, ncs: NCS) -> Self {
+        Self {
+            spi: spi::SpiDevice::new(spi, ncs),
+            _d:  core::marker::PhantomData,
+        }
+    }
+}
+
+impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1298Family, 6>
+where
+    SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
+    NCS: OutputPin<Error = core::convert::Infallible>,
+    E: core::fmt::Debug,
+{
+    /// Create ADS1296/ADS1296R device instance
+    pub fn new_ads1296(spi: SPI, ncs: NCS) -> Self {
+        Self {
+            spi: spi::SpiDevice::new(spi, ncs),
+            _d:  core::marker::PhantomData,
+        }
+    }
+}
+
+impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1298Family, 8>
+where
+    SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
+    NCS: OutputPin<Error = core::convert::Infallible>,
+    E: core::fmt::Debug,
+{
+    /// Create ADS1298/ADS1298R device instance
+    pub fn new_ads1298(spi: SPI, ncs: NCS) -> Self {
+        Self {
+            spi: spi::SpiDevice::new(spi, ncs),
+            _d:  core::marker::PhantomData,
+        }
+    }
 }
 
 impl<SPI, NCS, DEV, E, const CH: usize> Ads129x<SPI, NCS, DEV, CH>
@@ -73,13 +137,6 @@ where
     NCS: OutputPin<Error = core::convert::Infallible>,
     E: core::fmt::Debug,
 {
-    pub fn new_ads1292(spi: SPI, ncs: NCS) -> Self {
-        Self {
-            spi: spi::SpiDevice::new(spi, ncs),
-            _d:  core::marker::PhantomData,
-        }
-    }
-
     read_reg!(FAM: ads1292, FN: config, REG: CONFIG1 (conf::Config <= conf::Config1Reg));
     write_reg!(FAM: ads1292, FN: set_config, REG: CONFIG1 (conf::Config => conf::Config1Reg));
 }
@@ -90,14 +147,26 @@ where
     NCS: OutputPin<Error = core::convert::Infallible>,
     E: core::fmt::Debug,
 {
-    pub fn read_data<'frame, DF: data::DataFrame<'frame>>(
+    pub fn read_data(
         &mut self,
-        _data_frame: &'frame mut DF,
-        _delay: impl DelayUs<u32>,
+        data_frame: &mut data::DataFrame<CH>,
+        delay: impl DelayUs<u32>,
     ) -> Ads129xResult<(), E> {
-        // let mut words = [command::Command::RDATA as u8 | 0x00, 0x00, 0xA5];
-        // let res = self.spi.transfer(&mut words, delay)?;
-        todo!()
+        // Read data
+        {
+            let frame_bytes = data_frame.as_bytes_mut();
+            // Commad byte
+            // frame_bytes[0] = command::Command::RDATA as u8;
+            let _ = self.spi.transfer(frame_bytes, delay)?;
+        }
+
+        // Validate status word
+        let status_word = data_frame.status_word();
+        if status_word.sync() != 0b1100 {
+            return Err(Ads129xError::StatusWordMissmatch(status_word.sync()));
+        }
+
+        Ok(())
     }
 
     read_reg!(FAM: ads1298, FN: config, REG: CONFIG1 (conf::Config <= conf::Config1Reg));
@@ -140,48 +209,6 @@ where
 
     read_reg!(FAM: ads1298, FN: misc_config, REG: CONFIG4 (conf::MiscConfig <= conf::Config4Reg));
     write_reg!(FAM: ads1298, FN: set_misc_config, REG: CONFIG4 (conf::MiscConfig => conf::Config4Reg));
-}
-
-impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1298Family, 4>
-where
-    SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
-    NCS: OutputPin<Error = core::convert::Infallible>,
-    E: core::fmt::Debug,
-{
-    pub fn new_ads1294(spi: SPI, ncs: NCS) -> Self {
-        Self {
-            spi: spi::SpiDevice::new(spi, ncs),
-            _d:  core::marker::PhantomData,
-        }
-    }
-}
-
-impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1298Family, 6>
-where
-    SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
-    NCS: OutputPin<Error = core::convert::Infallible>,
-    E: core::fmt::Debug,
-{
-    pub fn new_ads1296(spi: SPI, ncs: NCS) -> Self {
-        Self {
-            spi: spi::SpiDevice::new(spi, ncs),
-            _d:  core::marker::PhantomData,
-        }
-    }
-}
-
-impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1298Family, 8>
-where
-    SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
-    NCS: OutputPin<Error = core::convert::Infallible>,
-    E: core::fmt::Debug,
-{
-    pub fn new_ads1298(spi: SPI, ncs: NCS) -> Self {
-        Self {
-            spi: spi::SpiDevice::new(spi, ncs),
-            _d:  core::marker::PhantomData,
-        }
-    }
 }
 
 impl<E> From<E> for Ads129xError<E> {

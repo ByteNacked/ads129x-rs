@@ -60,6 +60,13 @@ where
         Ok(())
     }
 
+    /// Read single byte
+    #[inline]
+    pub fn recv_byte(&mut self) -> Result<u8, E> {
+        nb::block!(self.spi.send(0x00))?;
+        Ok(nb::block!(self.spi.read())?)
+    }
+
     pub fn destroy(self) -> (SPI, NCS) {
         (self.spi, self.ncs)
     }
