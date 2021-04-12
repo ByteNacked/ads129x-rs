@@ -10,7 +10,7 @@ use embedded_hal as ehal;
 
 pub mod command;
 pub mod data;
-pub mod register;
+pub mod common;
 pub mod spi;
 
 pub mod ads1292;
@@ -22,7 +22,7 @@ pub struct Ads1298Family;
 #[derive(Debug)]
 pub enum Ads129xError<E> {
     /// Identification register read problem (probably unsupported device)
-    IdRegRead(register::id::IdRegError),
+    IdRegRead(common::id::IdRegError),
     /// Read bytes is invalid register value
     ReadInterpret(u8),
     /// Spi transport error
@@ -30,16 +30,21 @@ pub enum Ads129xError<E> {
 }
 
 macro_rules! impl_cmd {
-    ($fn_name:ident, $command:ident) => {
+    (__INNER: $doc:expr, $fn_name:ident, $command:ident) => {
+        #[doc = $doc]
         pub fn $fn_name(&mut self, delay: impl DelayUs<u32>) -> Ads129xResult<(), E> {
             self.spi.write(&[command::Command::$command as u8], delay)?;
             Ok(())
         }
     };
+    ($fn_name:ident, $command:ident) => {
+        impl_cmd!(__INNER: concat!("Spi command ", stringify!($command)), $fn_name, $command);
+    };
 }
 
 macro_rules! write_reg {
-    (FAM: $family_path:ident, FN: $fn_name:ident, REG: $reg_name:ident ($param_path:ident::$param_ty:ident => $reg_path:ident::$reg_ty:ident)) => {
+    (_INNER: $doc:expr, FAM: $family_path:ident, FN: $fn_name:ident, REG: $reg_name:ident ($param_path:ident::$param_ty:ident => $reg_path:ident::$reg_ty:ident)) => {
+        #[doc = $doc]
         pub fn $fn_name(
             &mut self,
             param: $family_path::$param_path::$param_ty,
@@ -54,10 +59,19 @@ macro_rules! write_reg {
             Ok(())
         }
     };
+    (FAM: $family_path:ident, FN: $fn_name:ident, REG: $reg_name:ident ($param_path:ident::$param_ty:ident => $reg_path:ident::$reg_ty:ident)) => {
+        write_reg!(
+            _INNER: concat!("Write register ", stringify!($reg_name)),
+            FAM: $family_path,
+            FN: $fn_name,
+            REG: $reg_name ($param_path::$param_ty => $reg_path::$reg_ty)
+        );
+    };
 }
 
 macro_rules! read_reg {
-    (FAM: $family_path:ident, FN: $fn_name:ident, REG: $reg_name:ident ($param_path:ident::$param_ty:ident <= $reg_path:ident::$reg_ty:ident)) => {
+    (_INNER: $doc:expr, FAM: $family_path:ident, FN: $fn_name:ident, REG: $reg_name:ident ($param_path:ident::$param_ty:ident <= $reg_path:ident::$reg_ty:ident)) => {
+        #[doc = $doc]
         pub fn $fn_name(
             &mut self,
             delay: impl DelayUs<u32>,
@@ -77,16 +91,24 @@ macro_rules! read_reg {
             Ok(param)
         }
     };
+    (FAM: $family_path:ident, FN: $fn_name:ident, REG: $reg_name:ident ($param_path:ident::$param_ty:ident <= $reg_path:ident::$reg_ty:ident)) => {
+        read_reg!(
+            _INNER: concat!("Read register ", stringify!($reg_name)),
+            FAM: $family_path,
+            FN: $fn_name,
+            REG: $reg_name ($param_path::$param_ty <= $reg_path::$reg_ty)
+        );
+    };
 }
 
 pub type Ads129xResult<T, E> = Result<T, Ads129xError<E>>;
 
-pub struct Ads129x<SPI, NCS, DEV> {
+pub struct Ads129x<SPI, NCS, DEV, const CH: usize> {
     spi: spi::SpiDevice<SPI, NCS>,
     _d: core::marker::PhantomData<DEV>,
 }
 
-impl<SPI, NCS, DEV, E> Ads129x<SPI, NCS, DEV>
+impl<SPI, NCS, DEV, E, const CH: usize> Ads129x<SPI, NCS, DEV, CH>
 where
     SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
     NCS: OutputPin<Error = core::convert::Infallible>,
@@ -103,11 +125,11 @@ where
     pub fn read_id(
         &mut self,
         delay: impl DelayUs<u32>,
-    ) -> Ads129xResult<register::id::DevModel, E> {
+    ) -> Ads129xResult<common::id::DevModel, E> {
         let mut words = [command::Command::RREG as u8 | 0x00, 0x00, 0xA5];
         let res = self.spi.transfer(&mut words, delay)?;
 
-        let model = register::id::DevModel::try_from(register::id::IdReg(res[2]))
+        let model = common::id::DevModel::try_from(common::id::IdReg(res[2]))
             .map_err(|e| Ads129xError::IdRegRead(e))?;
 
         Ok(model)
@@ -118,7 +140,7 @@ where
     }
 }
 
-impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1292Family>
+impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1292Family, 2>
 where
     SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
     NCS: OutputPin<Error = core::convert::Infallible>,
@@ -135,7 +157,7 @@ where
     write_reg!(FAM: ads1292, FN: set_config, REG: CONFIG1 (conf::Config => conf::Config1Reg));
 }
 
-impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1298Family>
+impl<SPI, NCS, E, const CH: usize> Ads129x<SPI, NCS, Ads1298Family, CH>
 where
     SPI: Write<u8, Error = E> + Transfer<u8, Error = E> + FullDuplex<u8, Error = E>,
     NCS: OutputPin<Error = core::convert::Infallible>,
