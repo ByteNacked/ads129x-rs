@@ -7,9 +7,9 @@ use embedded_hal as ehal;
 /// A SPI device also triggering the nCS-pin when suited.
 pub struct SpiDevice<SPI, NCS> {
     /// Underlying peripheral
-    spi: SPI,
+    pub spi: SPI,
     /// nCS
-    ncs: NCS,
+    pub ncs: NCS,
 }
 
 impl<SPI, NCS, E> SpiDevice<SPI, NCS>

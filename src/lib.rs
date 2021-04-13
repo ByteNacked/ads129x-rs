@@ -147,17 +147,42 @@ where
     NCS: OutputPin<Error = core::convert::Infallible>,
     E: core::fmt::Debug,
 {
+    // Read data samples from ADC
+    // Data samples are sign extend
     pub fn read_data(
         &mut self,
         data_frame: &mut data::DataFrame<CH>,
-        delay: impl DelayUs<u32>,
+        mut delay: impl DelayUs<u32>,
     ) -> Ads129xResult<(), E> {
-        // Read data
+        // Read status_word/data
         {
-            let frame_bytes = data_frame.as_bytes_mut();
-            // Commad byte
-            // frame_bytes[0] = command::Command::RDATA as u8;
-            let _ = self.spi.transfer(frame_bytes, delay)?;
+            let _ = self.spi.ncs.set_low();
+            delay.delay_us(40);
+
+            // Read status word
+            for idx in 0..data_frame.status_word.len() {
+                nb::block!(self.spi.spi.send(0x00))?;
+                data_frame.status_word[idx] = nb::block!(self.spi.spi.read())?;
+            }
+            // Read channels data, i24 big endian byte order
+            for idx in 0..CH {
+                let mut bb = [0x00u8; 4];
+                nb::block!(self.spi.spi.send(0x00))?;
+                bb[2] = nb::block!(self.spi.spi.read())?;
+                nb::block!(self.spi.spi.send(0x00))?;
+                bb[1] = nb::block!(self.spi.spi.read())?;
+                nb::block!(self.spi.spi.send(0x00))?;
+                bb[0] = nb::block!(self.spi.spi.read())?;
+                // Assemble sample as le
+                data_frame.data[idx] = i32::from_le_bytes(bb);
+                // Sign extend i24 -> i32
+                // On ARM should be optimized to SBFX instruction
+                data_frame.data[idx] = data_frame.data[idx] << 8 >> 8;
+            }
+
+            delay.delay_us(40);
+            let _ = self.spi.ncs.set_high();
+            delay.delay_us(20);
         }
 
         // Validate status word
