@@ -139,6 +139,17 @@ where
 {
     read_reg!(FAM: ads1292, FN: config, REG: CONFIG1 (conf::Config <= conf::Config1Reg));
     write_reg!(FAM: ads1292, FN: set_config, REG: CONFIG1 (conf::Config => conf::Config1Reg));
+
+    read_reg!(FAM: ads1292, FN: misc_config, REG: CONFIG2 (conf::MiscConfig <= conf::Config2Reg));
+    write_reg!(FAM: ads1292, FN: set_misc_config, REG: CONFIG2 (conf::MiscConfig => conf::Config2Reg));
+
+    read_reg!(FAM: ads1292, FN: chan_1, REG: CH1SET (chan::Chan <= chan::ChanSetReg));
+    read_reg!(FAM: ads1292, FN: chan_2, REG: CH2SET (chan::Chan <= chan::ChanSetReg));
+    write_reg!(FAM: ads1292, FN: set_chan_1, REG: CH1SET (chan::Chan => chan::ChanSetReg));
+    write_reg!(FAM: ads1292, FN: set_chan_2, REG: CH2SET (chan::Chan => chan::ChanSetReg));
+
+    read_reg!(FAM: ads1292, FN: resp, REG: RESP1 (resp::Resp1 <= resp::RespControl1Reg));
+    write_reg!(FAM: ads1292, FN: set_resp, REG: RESP1 (resp::Resp1 => resp::RespControl1Reg));
 }
 
 impl<SPI, NCS, E, const CH: usize> Ads129x<SPI, NCS, Ads1298Family, CH>

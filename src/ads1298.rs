@@ -9,7 +9,11 @@ macro_rules! impl_from_enum_to_bool {
     ($enum_name:ident) => {
         impl From<$enum_name> for bool {
             fn from(v: $enum_name) -> bool {
-                if v as u8 == 0x00 { false } else { true }
+                if v as u8 == 0x00 {
+                    false
+                } else {
+                    true
+                }
             }
         }
     };
@@ -376,10 +380,10 @@ pub mod conf {
         /// RLD measurement
         ///   - 0 = Open
         ///   - 1 = `RLD_IN` signal is routed to the channel that has the
-        ///     MUX_Setting 010 (VREF)
+        ///     MUX_Setting 010 (`VREF`)
         pub measurement_enable: bool,
 
-        /// Reference voltage 4V enable
+        /// Reference voltage `VREF` 4V enable
         pub vref_4V_enable: bool,
 
         /// Power-down reference buffer enable
@@ -454,7 +458,7 @@ pub mod conf {
         ///
         /// This bit enables RLD measurement
         ///   - 0 = Open
-        ///   - 1 = `RLD_IN` signal is routed to the channel that has the MUX_Setting 010 (VREF)
+        ///   - 1 = `RLD_IN` signal is routed to the channel that has the MUX_Setting 010 (`VREF`)
         ///
         pub rld_meas, set_rld_meas : 4;
         /// Reference voltage
@@ -516,6 +520,7 @@ pub mod conf {
     /// Various configurations
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct MiscConfig {
+        /// Lead-off comparator enable
         pub leadoff_comparator_enable: bool,
         pub wct_to_rld_enable:         bool,
         pub single_shot_mode:          bool,
@@ -969,7 +974,7 @@ pub mod loff {
                 detection_mode:       LeadOffDetectMode::try_from(reg.vlead_off_en() as u8)
                     .map_err(|_| reg.0)?,
                 comparator_threshold: LeadOffCompThreshold::PositiveSide(
-                    CompPositiveSide::try_from(reg.flead_off()).map_err(|_| reg.0)?,
+                    CompPositiveSide::try_from(reg.comp_th()).map_err(|_| reg.0)?,
                 ),
             })
         }
