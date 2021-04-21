@@ -1,6 +1,12 @@
 
 # ADS129x TI ADCs Rust HAL driver
 
+## Datasheets
+    
+  - [asd1292](https://www.ti.com/lit/ds/symlink/ads1292.pdf)
+  - [asd1298](https://www.ti.com/lit/ds/symlink/ads1298.pdf)
+
+
 ## [WIP]
 
 **Work in progress**
