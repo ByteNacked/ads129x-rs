@@ -5,6 +5,7 @@ use embedded_hal_mock::spi::{Mock as SpiMock, Transaction as SpiTransaction};
 use ads129x::ads1292::chan::*;
 use ads129x::ads1292::conf::*;
 use ads129x::ads1292::resp::*;
+use ads129x::ads1292::loff::*;
 // use ads129x::ads1292::gpio::*;
 use ads129x::Ads129x;
 
@@ -42,6 +43,8 @@ fn test() {
         SpiTransaction::write(vec![0x44, 0x00, 0b0001_0000]),
         // Chan2
         SpiTransaction::write(vec![0x45, 0x00, 0b0100_0000]),
+        // LoffStatus
+        SpiTransaction::write(vec![0x48, 0x00, 0b0100_0000]),
         // Resp1
         SpiTransaction::write(vec![0x49, 0x00, 0b1101_1110]),
     ];
@@ -87,6 +90,12 @@ fn test() {
             MockDelay,
         )
         .unwrap();
+
+    // LoffStatus
+    ads1292.set_loff_status(LeadOffStatus{
+        clk_div: ClkDiv::Div16,
+        .. Default::default()
+    }, MockDelay).unwrap();
 
     // Resp
     ads1292

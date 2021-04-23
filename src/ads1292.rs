@@ -349,6 +349,40 @@ pub mod loff {
         /// Controls the selection of positive input from channel 1 for lead-off detection
         pub loff1p, set_loff1p: 0;
     }
+    
+    // Lead-Off status
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct LeadOffStatus {
+        pub ch1_positive_leadoff: bool,
+        pub ch1_negative_leadoff: bool,
+        pub ch2_positive_leadoff: bool,
+        pub ch2_negative_leadoff: bool,
+        pub rld_leadoff: bool,
+        pub clk_div: ClkDiv,
+    }
+
+    impl Default for LeadOffStatus {
+        fn default() -> Self {
+            LeadOffStatus {
+                ch1_positive_leadoff: false,
+                ch1_negative_leadoff: false,
+                ch2_positive_leadoff: false,
+                ch2_negative_leadoff: false,
+                rld_leadoff: false,
+                clk_div: ClkDiv::Div4,
+            }
+
+        }
+    }
+    
+    /// Clock divider selection
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
+    #[repr(u8)]
+    pub enum ClkDiv {
+        Div4 = 0x00,
+        Div16 = 0x01,
+    }
+    impl_from_enum_to_bool!(ClkDiv);
 
     // 0x08
     bitfield! {
@@ -357,9 +391,10 @@ pub mod loff {
         /// This register stores the status of whether the positive or negative electrode on each
         /// channel is on or off
         ///
-        pub struct LeadoffStatusReg(u8);
+        pub struct LeadOffStatusReg(u8);
         impl Debug;
-
+        
+        // TODO: Doc
         pub in1p_off, set_in1p_off: 0;
         pub in1n_off, set_in1n_off: 1;
         pub in2p_off, set_in2p_off: 2;
@@ -367,6 +402,31 @@ pub mod loff {
         pub rld_stat, set_rld_stat: 4;
         pub clk_div, set_clk_div: 6;
     }
+    
+    impl From<LeadOffStatus> for LeadOffStatusReg {
+        fn from(param: LeadOffStatus) -> Self {
+            let mut reg = LeadOffStatusReg(0);
+            // Only clk_div writable
+            reg.set_clk_div(param.clk_div.into());
+            reg
+        }
+    }
+
+    impl TryFrom<LeadOffStatusReg> for LeadOffStatus {
+        type Error = u8;
+
+        fn try_from(reg: LeadOffStatusReg) -> Result<Self, Self::Error> {
+            Ok(LeadOffStatus{
+                ch1_positive_leadoff: reg.in1p_off(),
+                ch1_negative_leadoff: reg.in1n_off(),
+                ch2_positive_leadoff: reg.in2p_off(),
+                ch2_negative_leadoff: reg.in2n_off(),
+                rld_leadoff: reg.rld_stat(),
+                clk_div: ClkDiv::try_from(reg.clk_div() as u8).map_err(|_| reg.0)?,
+            })
+        }
+    }
+
 }
 
 pub mod chan {

@@ -148,6 +148,9 @@ where
     write_reg!(FAM: ads1292, FN: set_chan_1, REG: CH1SET (chan::Chan => chan::ChanSetReg));
     write_reg!(FAM: ads1292, FN: set_chan_2, REG: CH2SET (chan::Chan => chan::ChanSetReg));
 
+    read_reg!(FAM: ads1292, FN: loff_status, REG: LOFF_STAT (loff::LeadOffStatus <= loff::LeadOffStatusReg));
+    write_reg!(FAM: ads1292, FN: set_loff_status, REG: LOFF_STAT (loff::LeadOffStatus => loff::LeadOffStatusReg));
+
     read_reg!(FAM: ads1292, FN: resp, REG: RESP1 (resp::Resp1 <= resp::RespControl1Reg));
     write_reg!(FAM: ads1292, FN: set_resp, REG: RESP1 (resp::Resp1 => resp::RespControl1Reg));
 }
