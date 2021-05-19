@@ -55,6 +55,53 @@ where
             _d:  core::marker::PhantomData,
         }
     }
+
+    // Read data samples from ADC
+    // Data samples are sign extend
+    pub fn read_data(
+        &mut self,
+        data_frame: &mut data::DataFrame92,
+        mut delay: impl DelayUs<u32>,
+    ) -> Ads129xResult<(), E> {
+        // Read status_word/data
+        {
+            let _ = self.spi.ncs.set_low();
+            delay.delay_us(40);
+
+            // Read status word
+            for idx in 0..data_frame.status_word.len() {
+                nb::block!(self.spi.spi.send(0x00))?;
+                data_frame.status_word[idx] = nb::block!(self.spi.spi.read())?;
+            }
+            // Read channels data, i24 big endian byte order
+            for idx in 0..2 {
+                let mut bb = [0x00u8; 4];
+                nb::block!(self.spi.spi.send(0x00))?;
+                bb[2] = nb::block!(self.spi.spi.read())?;
+                nb::block!(self.spi.spi.send(0x00))?;
+                bb[1] = nb::block!(self.spi.spi.read())?;
+                nb::block!(self.spi.spi.send(0x00))?;
+                bb[0] = nb::block!(self.spi.spi.read())?;
+                // Assemble sample as le
+                data_frame.data[idx] = i32::from_le_bytes(bb);
+                // Sign extend i24 -> i32
+                // On ARM should be optimized to SBFX instruction
+                data_frame.data[idx] = data_frame.data[idx] << 8 >> 8;
+            }
+
+            delay.delay_us(40);
+            let _ = self.spi.ncs.set_high();
+            delay.delay_us(20);
+        }
+
+        // Validate status word
+        let status_word = data_frame.status_word();
+        if status_word.sync() != 0b1100 {
+            return Err(Ads129xError::StatusWordMissmatch(status_word.sync()));
+        }
+
+        Ok(())
+    }
 }
 
 impl<SPI, NCS, E> Ads129x<SPI, NCS, Ads1298Family, 4>
