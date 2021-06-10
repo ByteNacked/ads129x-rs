@@ -11,6 +11,7 @@ bitfield! {
     pub u8, gpio, set_gpio : 15, 14;
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct DataFrame92 {
     pub status_word: [u8; 3],
     pub data:        [i32; 2],
@@ -56,6 +57,7 @@ bitfield! {
     pub u8, gpio, set_gpio : 3, 0;
 }
 
+#[derive(Clone, Copy)]
 pub struct DataFrame<const CH: usize> {
     pub status_word: [u8; 3],
     pub data:        [i32; CH],

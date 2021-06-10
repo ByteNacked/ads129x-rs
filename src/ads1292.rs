@@ -129,6 +129,7 @@ pub mod conf {
     }
 
     /// Various configurations
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct MiscConfig {
         /// Test signal frequency
         pub test_signal_freq:          TestSignalFreq,
