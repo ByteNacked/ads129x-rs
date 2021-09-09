@@ -198,6 +198,9 @@ where
     read_reg!(FAM: ads1292, FN: loff_status, REG: LOFF_STAT (loff::LeadOffStatus <= loff::LeadOffStatusReg));
     write_reg!(FAM: ads1292, FN: set_loff_status, REG: LOFF_STAT (loff::LeadOffStatus => loff::LeadOffStatusReg));
 
+    read_reg!(FAM: ads1292, FN: leadoff_control, REG: LOFF (loff::LeadOffControl <= loff::LeadOffControlReg));
+    write_reg!(FAM: ads1292, FN: set_leadoff_control, REG: LOFF (loff::LeadOffControl => loff::LeadOffControlReg));
+
     read_reg!(FAM: ads1292, FN: resp, REG: RESP1 (resp::Resp1 <= resp::RespControl1Reg));
     write_reg!(FAM: ads1292, FN: set_resp, REG: RESP1 (resp::Resp1 => resp::RespControl1Reg));
 }
